@@ -1,0 +1,104 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+
+class MarchingCubes
+{
+    private static readonly int size = 40;
+    private float[,,] matrix = new float[size, size, size];
+    private CubeInformation[,,] cubeMatrix = new CubeInformation[size, size, size];
+    List<Triangle> triangles;
+    Vector3 offset;
+
+    public MarchingCubes(Vector3 offset)
+    {
+        this.offset = offset;
+        for (int i = 0; i < size - 1; i++)
+            for (int j = 0; j < size - 1; j++)
+                for (int k = 0; k < size - 1; k++)
+                {
+                    cubeMatrix[i, j, k] = new CubeInformation(new Vector3(i, j, k) + offset);
+                }
+    }
+
+    public Triangle[] GetTriangles(Vector3[] points, int numParticlesAlive)
+    {
+        for (int i = 0; i < size; i++)
+            for (int j = 0; j < size; j++)
+                for (int k = 0; k < size; k++)
+                {
+                    matrix[i, j, k] = 0;
+                }
+        for (int i = 0; i < numParticlesAlive; i++)
+        {
+            AddPoint(points[i] - offset);
+        }
+        triangles = new List<Triangle>();
+        for (int i = 0; i < size - 1; i++)
+            for (int j = 0; j < size - 1; j++)
+                for (int k = 0; k < size - 1; k++)
+                {
+                    var cube = cubeMatrix[i, j, k];
+                    cube.BackLeftDown = matrix[i + 1, j, k];
+                    cube.BackLeftUp = matrix[i + 1, j, k + 1];
+                    cube.BackRightDown = matrix[i + 1, j + 1, k];
+                    cube.BackRightUp = matrix[i + 1, j + 1, k + 1];
+
+                    cube.FrontLeftDown = matrix[i, j, k];
+                    cube.FrontLeftUp = matrix[i, j, k + 1];
+                    cube.FrontRightDown = matrix[i, j + 1, k];
+                    cube.FrontRightUp = matrix[i, j + 1, k + 1];
+                    //cube.DrawAll();
+                    var added = MarchingCubesTriangles.GetTriangle(cube);
+                    triangles.AddRange(added);
+                }
+        var max = cubeMatrix[0, 0, 0].BLD;
+        var min = cubeMatrix[size - 2, size - 2, size - 2].FRU;
+        Debug.DrawLine(min, max, Color.blue);
+
+        return triangles.ToArray();
+    }
+
+    private void AddPoint(Vector3 inpoint)
+    {
+
+        var point = inpoint / CubeInformation.size;
+
+        int i1 = (int)point.x;
+        int i2 = (int)point.x + 1;
+        float x2 = i2 - point.x;
+        float x1 = point.x - i1;
+
+        int j1 = (int)point.y;
+        int j2 = (int)point.y + 1;
+        float y2 = j2 - point.y;
+        float y1 = point.y - j1;
+
+        int k1 = (int)point.z;
+        int k2 = (int)point.z + 1;
+        float z2 = k2 - point.z;
+        float z1 = point.z - k1;
+
+        if (i1 >= size || i2 >= size || j1 >= size || j2 >= size || k1 >= size || k2 >= size)
+        {
+            return;
+        }
+        if (i1 < 0 || i2 < 0 || j1 < 0 || j2 < 0 || k1 < 0 || k2 < 0)
+        {
+            return;
+        }
+        var multiple = 1f;
+        matrix[i1, j1, k1] += Mathf.Sqrt(x1 * x1 + y1 * y1 + z1 * z1) * multiple;
+        matrix[i2, j1, k1] += Mathf.Sqrt(x2 * x2 + y1 * y1 + z1 * z1) * multiple;
+        matrix[i1, j2, k1] += Mathf.Sqrt(x1 * x1 + y2 * y2 + z1 * z1) * multiple;
+        matrix[i2, j2, k1] += Mathf.Sqrt(x2 * x2 + y2 * y2 + z1 * z1) * multiple;
+        matrix[i1, j1, k2] += Mathf.Sqrt(x1 * x1 + y1 * y1 + z2 * z2) * multiple;
+        matrix[i2, j1, k2] += Mathf.Sqrt(x2 * x2 + y1 * y1 + z2 * z2) * multiple;
+        matrix[i1, j2, k2] += Mathf.Sqrt(x1 * x1 + y2 * y2 + z2 * z2) * multiple;
+        matrix[i2, j2, k2] += Mathf.Sqrt(x2 * x2 + y2 * y2 + z2 * z2) * multiple;
+    }
+}
+
