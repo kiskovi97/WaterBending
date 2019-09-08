@@ -64,7 +64,6 @@ class MarchingCubes
 
     private void AddPoint(Vector3 inpoint)
     {
-
         var point = inpoint / CubeInformation.size;
 
         int i1 = (int)point.x;

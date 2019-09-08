@@ -13,7 +13,7 @@ int vertexBufferSize;
 int _Width;
 int _Height;
 
-float _Target = 0.1;
+float _Target = 0.5;
 
 static int2 edgeConnection[12] =
 {
@@ -117,9 +117,17 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 			float3 c = edgeVertex[index];
 
 			vertexIndex = AddTriangle(a,b,c, vertexIndex);
-
-			//vertexIndex = AddTriangle(edgeVertex[0], edgeVertex[1], edgeVertex[2], vertexIndex);
+		}
+		else {
+			vertexBuffer[vertexIndex] = float3(0,0,0);
+			triangleBuffer[vertexIndex] = 0;
+			vertexIndex++;
+			vertexBuffer[vertexIndex] = float3(0, 0, 0);
+			triangleBuffer[vertexIndex] = 0;
+			vertexIndex++;
+			vertexBuffer[vertexIndex] = float3(0, 0, 0);
+			triangleBuffer[vertexIndex] = 0;
+			vertexIndex++;
 		}
 	}
-	//outputBuffer[index] = inputBuffer[index] * float3(id.x, id.y, id.z);
 }
