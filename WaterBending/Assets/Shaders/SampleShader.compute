@@ -1,0 +1,125 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+RWStructuredBuffer<float> inputBuffer;
+RWStructuredBuffer<int> TriangleConnectionTable;
+
+RWStructuredBuffer<int> triangleBuffer;
+RWStructuredBuffer<float3> vertexBuffer;
+
+int matrixSize;
+int vertexBufferSize;
+
+int _Width;
+int _Height;
+
+float _Target = 0.1;
+
+static int2 edgeConnection[12] =
+{
+	int2(0,1), int2(1,2), int2(2,3), int2(3,0), int2(4,5), int2(5,6), int2(6,7), int2(7,4), 
+	int2(0,4), int2(1,5), int2(2,6), int2(3,7)
+};
+
+// edgeDirection lists the direction vector (vertex1-vertex0) for each edge in the cube
+static float3 edgeDirection[12] =
+{
+	float3(1.0f, 0.0f, 0.0f),float3(0.0f, 1.0f, 0.0f),float3(-1.0f, 0.0f, 0.0f),float3(0.0f, -1.0f, 0.0f),
+	float3(1.0f, 0.0f, 0.0f),float3(0.0f, 1.0f, 0.0f),float3(-1.0f, 0.0f, 0.0f),float3(0.0f, -1.0f, 0.0f),
+	float3(0.0f, 0.0f, 1.0f),float3(0.0f, 0.0f, 1.0f),float3(0.0f, 0.0f, 1.0f),float3(0.0f,  0.0f, 1.0f)
+};
+
+static float3 vertexOffset[8] =
+{
+	float3(0, 0, 0),float3(1, 0, 0),float3(1, 1, 0),float3(0, 1, 0),
+	float3(0, 0, 1),float3(1, 0, 1),float3(1, 1, 1),float3(0, 1, 1)
+};
+
+float GetOffset(float v1, float v2)
+{
+	float delta = v2 - v1;
+	return (delta == 0.0f) ? 0.5f : (_Target - v1) / delta;
+}
+
+void FillCube(int x, int y, int z, out float cube[8])
+{
+	cube[0] = inputBuffer[x + y * _Width + z * _Width * _Height];
+	cube[1] = inputBuffer[(x + 1) + y * _Width + z * _Width * _Height];
+	cube[2] = inputBuffer[(x + 1) + (y + 1) * _Width + z * _Width * _Height];
+	cube[3] = inputBuffer[x + (y + 1) * _Width + z * _Width * _Height];
+
+	cube[4] = inputBuffer[x + y * _Width + (z + 1) * _Width * _Height];
+	cube[5] = inputBuffer[(x + 1) + y * _Width + (z + 1) * _Width * _Height];
+	cube[6] = inputBuffer[(x + 1) + (y + 1) * _Width + (z + 1) * _Width * _Height];
+	cube[7] = inputBuffer[x + (y + 1) * _Width + (z + 1) * _Width * _Height];
+}
+
+int AddTriangle(float3 a, float3 b, float3 c, int vertexIndex) {
+	vertexBuffer[vertexIndex] = a;
+	triangleBuffer[vertexIndex] = vertexIndex;
+	vertexIndex++;
+	vertexBuffer[vertexIndex] = b;
+	triangleBuffer[vertexIndex] = vertexIndex;
+	vertexIndex++;
+	vertexBuffer[vertexIndex] = c;
+	triangleBuffer[vertexIndex] = vertexIndex;
+	vertexIndex++;
+	return vertexIndex;
+}
+
+[numthreads(8,8,8)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+	int index = id.x + id.y * matrixSize + id.z * matrixSize * matrixSize;
+
+	float cube[8];
+	FillCube(id.x, id.y, id.z, cube);
+
+
+	float3 pos = float3(id);
+	int i = 0;
+	int flagIndex = 0;
+	float3 edgeVertex[12];
+
+	//Find which vertices are inside of the surface and which are outside
+	for (i = 0; i < 8; i++)
+		if (cube[i] <= _Target) flagIndex |= 1 << i;
+	
+	for (i = 0; i < 12; i++)
+	{
+		//if there is an intersection on this edge
+		if ((1 << i) != 0)
+		{
+			float offset = GetOffset(cube[edgeConnection[i].x], cube[edgeConnection[i].y]);
+			edgeVertex[i] = pos + (vertexOffset[edgeConnection[i].x] + offset * edgeDirection[i]);
+		}
+	}
+
+	int vertexIndex = id.x * vertexBufferSize + id.y * matrixSize * vertexBufferSize + id.z * matrixSize * matrixSize * vertexBufferSize;
+
+	for (i = 0; i < 5; i++)
+	{
+		//If the connection table is not -1 then this a triangle.
+		if (TriangleConnectionTable[flagIndex * 16 + 3 * i] >= 0)
+		{
+			float3 position;
+
+			int index = TriangleConnectionTable[flagIndex * 16 + 3 * i];
+
+			float3 a = edgeVertex[index];
+
+			index = TriangleConnectionTable[flagIndex * 16 + (3 * i + 1)];
+
+			float3 b = edgeVertex[index];
+
+			index = TriangleConnectionTable[flagIndex * 16 + (3 * i + 2)];
+
+			float3 c = edgeVertex[index];
+
+			vertexIndex = AddTriangle(a,b,c, vertexIndex);
+
+			//vertexIndex = AddTriangle(edgeVertex[0], edgeVertex[1], edgeVertex[2], vertexIndex);
+		}
+	}
+	//outputBuffer[index] = inputBuffer[index] * float3(id.x, id.y, id.z);
+}
