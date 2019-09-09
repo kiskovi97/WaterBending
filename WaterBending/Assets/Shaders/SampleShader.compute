@@ -67,6 +67,12 @@ int AddTriangle(float3 a, float3 b, float3 c, int vertexIndex) {
 	return vertexIndex;
 }
 
+bool IsOnEdge(float3 index) {
+	return index.x >= matrixSize - 1
+		|| index.y >= matrixSize - 1
+		|| index.z >= matrixSize - 1;
+}
+
 [numthreads(8,8,8)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
@@ -77,6 +83,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
 
 	float3 pos = float3(id);
+
+	if (IsOnEdge(pos)) {
+		return;
+	}
+
 	int i = 0;
 	int flagIndex = 0;
 	float3 edgeVertex[12];
@@ -95,7 +106,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 		}
 	}
 
-	int vertexIndex = id.x * vertexBufferSize + id.y * matrixSize * vertexBufferSize + id.z * matrixSize * matrixSize * vertexBufferSize;
+	int vertexIndex = vertexBufferSize * ( id.x  + id.y * matrixSize + id.z * matrixSize * matrixSize);
 
 	for (i = 0; i < 5; i++)
 	{
@@ -119,7 +130,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 			vertexIndex = AddTriangle(a,b,c, vertexIndex);
 		}
 		else {
-			vertexBuffer[vertexIndex] = float3(0,0,0);
+			vertexBuffer[vertexIndex] = float3(0, 0, 0);
 			triangleBuffer[vertexIndex] = 0;
 			vertexIndex++;
 			vertexBuffer[vertexIndex] = float3(0, 0, 0);

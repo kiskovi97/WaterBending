@@ -3,19 +3,22 @@ using UnityEngine;
 
 public class ParticleConnector : MonoBehaviour
 {
-
+    private float scale = 1f;
+    private float multiple = 2f;
     public MarchingCubeShader marchingCube;
 
     private new ParticleSystem particleSystem;
     private ParticleSystem.Particle[] particles;
 
-    private static readonly int size = MarchingCubeParameters.MatrixSize;
-    private float[] matrix = new float[size * size * size];
+    private static int size;
+    private float[] matrix;
     private Vector3 offset;
 
     // Start is called before the first frame update
     void Start()
     {
+        size = MarchingCubeParameters.MatrixSize;
+        matrix = new float[size * size * size];
         InitializeIfNeeded();
         if (marchingCube == null)
         {
@@ -56,7 +59,7 @@ public class ParticleConnector : MonoBehaviour
 
     private void AddPoint(Vector3 inpoint)
     {
-        var point = inpoint / CubeInformation.size;
+        var point = inpoint * scale;
 
         int i1 = (int)point.x;
         int i2 = (int)point.x + 1;
@@ -81,7 +84,6 @@ public class ParticleConnector : MonoBehaviour
         {
             return;
         }
-        var multiple = 1f;
         matrix[GetIndex(i1, j1, k1)] += Mathf.Sqrt(x1 * x1 + y1 * y1 + z1 * z1) * multiple;
         matrix[GetIndex(i2, j1, k1)] += Mathf.Sqrt(x2 * x2 + y1 * y1 + z1 * z1) * multiple;
         matrix[GetIndex(i1, j2, k1)] += Mathf.Sqrt(x1 * x1 + y2 * y2 + z1 * z1) * multiple;

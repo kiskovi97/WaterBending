@@ -11,7 +11,7 @@ namespace Assets.Scripts.GPUBased
         public static readonly int TrianglePerBox = 5; //5;
         public static readonly int MatrixSize = 16;
         public static readonly int BufferSize = MatrixSize * MatrixSize * MatrixSize;
-        public static readonly int TriangleCount = MatrixSize * MatrixSize * MatrixSize * TrianglePerBox;
+        public static readonly int TriangleCount = BufferSize * TrianglePerBox;
         public static readonly int VertexCount = TriangleCount * 3;
 
         public readonly static int[,] TriangleConnectionTable = new int[,]

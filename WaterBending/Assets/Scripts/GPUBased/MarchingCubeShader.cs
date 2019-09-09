@@ -1,6 +1,4 @@
 ﻿using Assets.Scripts.GPUBased;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BufferContainer
@@ -12,7 +10,7 @@ public class BufferContainer
 
     public void SetAll()
     {
-        inputBuffer = new ComputeBuffer(MarchingCubeParameters.MatrixSize * MarchingCubeParameters.MatrixSize * MarchingCubeParameters.MatrixSize * 3, sizeof(float));
+        inputBuffer = new ComputeBuffer(MarchingCubeParameters.BufferSize, sizeof(float));
         vertexBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount * 3, sizeof(float));
         triangleBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount, sizeof(int));
         triangleConnectionTable = new ComputeBuffer(256 * 16, sizeof(int));
@@ -62,9 +60,12 @@ public class MarchingCubeShader : MonoBehaviour
 
     void Update()
     {
-        ClearTriangles();
-        ComputeStepFrame();
-        SetMesh();
+        if (isChanged)
+        {
+            ClearTriangles();
+            ComputeStepFrame();
+            SetMesh();
+        }
     }
 
     private void ClearTriangles()
@@ -90,7 +91,8 @@ public class MarchingCubeShader : MonoBehaviour
         compute.SetInt("_Height", MarchingCubeParameters.MatrixSize);
         compute.SetInt("vertexBufferSize", MarchingCubeParameters.TrianglePerBox * 3);
 
-        compute.Dispatch(kernelHandle, MarchingCubeParameters.MatrixSize / 8, MarchingCubeParameters.MatrixSize / 8, MarchingCubeParameters.MatrixSize / 8);
+        compute.Dispatch(kernelHandle, MarchingCubeParameters.MatrixSize / 8, 
+            MarchingCubeParameters.MatrixSize / 8, MarchingCubeParameters.MatrixSize / 8);
     }
 
     private void SetMesh()
@@ -106,12 +108,5 @@ public class MarchingCubeShader : MonoBehaviour
         meshFilter.mesh.SetIndices(triangles, MeshTopology.Triangles, 0);
 
         meshFilter.mesh.RecalculateNormals();
-
-        //for (int i=0; i< VertexCount; i += 3)
-        //{
-        //    Debug.DrawLine(vertecies[triangles[i]], vertecies[triangles[i + 1]], Color.red);
-        //    Debug.DrawLine(vertecies[triangles[i + 1]], vertecies[triangles[i + 2]], Color.red);
-        //    Debug.DrawLine(vertecies[triangles[i + 2]], vertecies[triangles[i]], Color.red);
-        //}
     }
 }
