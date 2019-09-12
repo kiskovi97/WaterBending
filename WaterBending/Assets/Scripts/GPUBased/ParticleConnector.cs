@@ -1,14 +1,21 @@
 ﻿using Assets.Scripts.GPUBased;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ParticleConnector : MonoBehaviour
 {
     private readonly float scale = 1f;
-    private readonly float multiple = 0.8f;
+    private readonly float radius = 2f;
+    private readonly float multiple = 2f;
     public MarchingCubeShader marchingCube;
-    
+
     private ParticlePhysicsSystem particlePhysicsSystem;
-    
+    private new ParticleSystem particleSystem;
+    private ParticleSystem.Particle[] particles;
+
+    public bool UseParticleSystem = true;
+
 
     private static int size;
     private float[] matrix;
@@ -20,21 +27,31 @@ public class ParticleConnector : MonoBehaviour
         size = MarchingCubeParameters.MatrixSize;
         particlePhysicsSystem = new ParticlePhysicsSystem(offset);
         matrix = new float[size * size * size];
-        
+
         if (marchingCube == null)
         {
             marchingCube = GetComponent<MarchingCubeShader>();
         }
+
+        particleSystem = GetComponent<ParticleSystem>();
+
+        InitializeIfNeeded();
     }
 
     // Update is called once per frame
     private void LateUpdate()
     {
         offset = transform.position;
-
         particlePhysicsSystem.Step(Time.deltaTime, offset);
-        
-        Generate();
+
+        if (UseParticleSystem && particleSystem != null)
+        {
+            int numParticlesAlive = particleSystem.GetParticles(particles);
+            Generate(numParticlesAlive);
+        } else
+        {
+            Generate(0);
+        }
 
         marchingCube.SetInput(matrix);
     }
@@ -44,7 +61,7 @@ public class ParticleConnector : MonoBehaviour
         return i + j * size + k * size * size;
     }
 
-    void Generate()
+    void Generate(int numParticlesAlive)
     {
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
@@ -52,56 +69,75 @@ public class ParticleConnector : MonoBehaviour
                 {
                     matrix[GetIndex(i, j, k)] = 0f;
                 }
-        foreach(var particle in particlePhysicsSystem.Particles)
+        if (UseParticleSystem && particleSystem != null)
         {
-            AddPoint(particle.Position + offset, particle.Direction);
+            for (int i = 0; i < numParticlesAlive; i++)
+            {
+                AddPoint(particles[i].position + offset, Vector3.up);
+            }
+        } else
+        {
+            foreach (var particle in particlePhysicsSystem.Particles)
+            {
+                AddPoint(particle.Position + offset, particle.Direction);
+            }
         }
-        //for (int i = 0; i < numParticlesAlive; i++)
-        //{
-        //    AddPoint(particles[i].position + offset);
-        //}
-    }
 
-    private Vector3 prev = new Vector3(0.3f, 0, 0);
-    private Vector3 prev1 = new Vector3(0, 0.3f, 0);
-    private Vector3 prev2 = new Vector3(0, 0, 0.3f);
+        
+    }
 
     private void AddPoint(Vector3 inpoint, Vector3 direction)
     {
-        Debug.DrawLine(inpoint + direction.normalized*0.5f, inpoint, Color.red);
+        Debug.DrawLine(inpoint + direction.normalized * 0.5f, inpoint, Color.red);
         //return;
         var point = inpoint * scale;
 
-        int i1 = (int)point.x;
-        int i2 = (int)point.x + 1;
-        float x2 = i2 - point.x;
-        float x1 = point.x - i1;
+        var indexes = GetCloseIndexes(point);
 
-        int j1 = (int)point.y;
-        int j2 = (int)point.y + 1;
-        float y2 = j2 - point.y;
-        float y1 = point.y - j1;
-
-        int k1 = (int)point.z;
-        int k2 = (int)point.z + 1;
-        float z2 = k2 - point.z;
-        float z1 = point.z - k1;
-
-        if (i1 >= size || i2 >= size || j1 >= size || j2 >= size || k1 >= size || k2 >= size)
+        foreach(var index in indexes)
         {
-            return;
+            //Debug.DrawLine(index, inpoint, Color.cyan);
+            var distance = (point - index).magnitude;
+            
+            if (distance < radius && IndexIsOkay(index))
+            {
+                matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / radius)) * multiple;
+            }
         }
-        if (i1 < 0 || i2 < 0 || j1 < 0 || j2 < 0 || k1 < 0 || k2 < 0)
-        {
-            return;
-        }
-        matrix[GetIndex(i1, j1, k1)] += Mathf.Sqrt(x1 * x1 + y1 * y1 + z1 * z1) * multiple;
-        matrix[GetIndex(i2, j1, k1)] += Mathf.Sqrt(x2 * x2 + y1 * y1 + z1 * z1) * multiple;
-        matrix[GetIndex(i1, j2, k1)] += Mathf.Sqrt(x1 * x1 + y2 * y2 + z1 * z1) * multiple;
-        matrix[GetIndex(i2, j2, k1)] += Mathf.Sqrt(x2 * x2 + y2 * y2 + z1 * z1) * multiple;
-        matrix[GetIndex(i1, j1, k2)] += Mathf.Sqrt(x1 * x1 + y1 * y1 + z2 * z2) * multiple;
-        matrix[GetIndex(i2, j1, k2)] += Mathf.Sqrt(x2 * x2 + y1 * y1 + z2 * z2) * multiple;
-        matrix[GetIndex(i1, j2, k2)] += Mathf.Sqrt(x1 * x1 + y2 * y2 + z2 * z2) * multiple;
-        matrix[GetIndex(i2, j2, k2)] += Mathf.Sqrt(x2 * x2 + y2 * y2 + z2 * z2) * multiple;
+    }
+
+    private bool IndexIsOkay(Vector3 point)
+    {
+        return point.x >= 0 && point.x < size 
+            && point.y >= 0 && point.y < size
+            && point.z >= 0 && point.z < size;
+    }
+
+    private Vector3[] GetCloseIndexes(Vector3 point)
+    {
+        int minX = Mathf.RoundToInt(point.x - radius);
+        int minY = Mathf.RoundToInt(point.y - radius);
+        int minZ = Mathf.RoundToInt(point.z - radius);
+
+        int maxX = Mathf.RoundToInt(point.x + radius);
+        int maxY = Mathf.RoundToInt(point.y + radius);
+        int maxZ = Mathf.RoundToInt(point.z + radius);
+        var list = new List<Vector3>();
+        for (int i = minX; i <= maxX; i++)
+            for (int j = minY; j <= maxY; j++)
+                for (int k = minZ; k <= maxZ; k++)
+                {
+                    list.Add(new Vector3(i, j, k));
+                }
+        return list.ToArray();
+    }
+
+    void InitializeIfNeeded()
+    {
+        if (particleSystem == null)
+            particleSystem = GetComponent<ParticleSystem>();
+
+        if (particles == null || particles.Length < particleSystem.main.maxParticles)
+            particles = new ParticleSystem.Particle[particleSystem.main.maxParticles];
     }
 }

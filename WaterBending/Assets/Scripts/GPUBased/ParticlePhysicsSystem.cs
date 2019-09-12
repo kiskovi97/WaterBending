@@ -8,7 +8,7 @@ namespace Assets.Scripts.GPUBased
 {
     class ParticlePhysicsSystem
     {
-        private static readonly int NumberOfParticles = 20;
+        private static readonly int NumberOfParticles = 50;
         private static readonly float speed = 2f;
 
         private readonly List<Particle> myParticles = new List<Particle>();
