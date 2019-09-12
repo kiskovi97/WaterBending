@@ -13,11 +13,11 @@ int vertexBufferSize;
 int _Width;
 int _Height;
 
-float _Target = 0.5;
+float _Target = 0.5f;
 
 static int2 edgeConnection[12] =
 {
-	int2(0,1), int2(1,2), int2(2,3), int2(3,0), int2(4,5), int2(5,6), int2(6,7), int2(7,4), 
+	int2(0,1), int2(1,2), int2(2,3), int2(3,0), int2(4,5), int2(5,6), int2(6,7), int2(7,4),
 	int2(0,4), int2(1,5), int2(2,6), int2(3,7)
 };
 
@@ -31,8 +31,8 @@ static float3 edgeDirection[12] =
 
 static float3 vertexOffset[8] =
 {
-	float3(0, 0, 0),float3(1, 0, 0),float3(1, 1, 0),float3(0, 1, 0),
-	float3(0, 0, 1),float3(1, 0, 1),float3(1, 1, 1),float3(0, 1, 1)
+	float3(0.0f, 0.0f, 0.0f),float3(1.0f, 0.0f, 0.0f),float3(1.0f, 1.0f, 0.0f),float3(0.0f, 1.0f, 0.0f),
+	float3(0.0f, 0.0f, 1.0f),float3(1.0f, 0.0f, 1.0f),float3(1.0f, 1.0f, 1.0f),float3(0.0f, 1.0f, 1.0f)
 };
 
 float GetOffset(float v1, float v2)
@@ -54,7 +54,7 @@ void FillCube(int x, int y, int z, out float cube[8])
 	cube[7] = inputBuffer[x + (y + 1) * _Width + (z + 1) * _Width * _Height];
 }
 
-int AddTriangle(float3 a, float3 b, float3 c, int vertexIndex) {
+uint AddTriangle(float3 a, float3 b, float3 c, uint vertexIndex) {
 	vertexBuffer[vertexIndex] = a;
 	triangleBuffer[vertexIndex] = vertexIndex;
 	vertexIndex++;
@@ -73,10 +73,11 @@ bool IsOnEdge(float3 index) {
 		|| index.z >= matrixSize - 1;
 }
 
-[numthreads(8,8,8)]
+[numthreads(8, 8, 8)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
-	int index = id.x + id.y * matrixSize + id.z * matrixSize * matrixSize;
+	_Target = 0.5f;
+	uint index = id.x + id.y * matrixSize + id.z * matrixSize * matrixSize;
 
 	float cube[8];
 	FillCube(id.x, id.y, id.z, cube);
@@ -95,7 +96,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	//Find which vertices are inside of the surface and which are outside
 	for (i = 0; i < 8; i++)
 		if (cube[i] <= _Target) flagIndex |= 1 << i;
-	
+
 	for (i = 0; i < 12; i++)
 	{
 		//if there is an intersection on this edge
@@ -106,7 +107,8 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 		}
 	}
 
-	int vertexIndex = vertexBufferSize * ( id.x  + id.y * matrixSize + id.z * matrixSize * matrixSize);
+
+	uint vertexIndex = vertexBufferSize * (id.x + id.y * matrixSize + id.z * matrixSize * matrixSize);
 
 	for (i = 0; i < 5; i++)
 	{
@@ -127,7 +129,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
 			float3 c = edgeVertex[index];
 
-			vertexIndex = AddTriangle(a,b,c, vertexIndex);
+			vertexIndex = AddTriangle(a, b, c, vertexIndex);
 		}
 		else {
 			vertexBuffer[vertexIndex] = float3(0, 0, 0);

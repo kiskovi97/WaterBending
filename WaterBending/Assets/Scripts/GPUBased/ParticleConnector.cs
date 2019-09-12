@@ -3,12 +3,12 @@ using UnityEngine;
 
 public class ParticleConnector : MonoBehaviour
 {
-    private float scale = 1f;
-    private float multiple = 2f;
+    private readonly float scale = 1f;
+    private readonly float multiple = 0.8f;
     public MarchingCubeShader marchingCube;
-
-    private new ParticleSystem particleSystem;
-    private ParticleSystem.Particle[] particles;
+    
+    private ParticlePhysicsSystem particlePhysicsSystem;
+    
 
     private static int size;
     private float[] matrix;
@@ -18,8 +18,9 @@ public class ParticleConnector : MonoBehaviour
     void Start()
     {
         size = MarchingCubeParameters.MatrixSize;
+        particlePhysicsSystem = new ParticlePhysicsSystem(offset);
         matrix = new float[size * size * size];
-        InitializeIfNeeded();
+        
         if (marchingCube == null)
         {
             marchingCube = GetComponent<MarchingCubeShader>();
@@ -30,10 +31,10 @@ public class ParticleConnector : MonoBehaviour
     private void LateUpdate()
     {
         offset = transform.position;
-        // GetParticles is allocation free because we reuse the m_Particles buffer between updates
-        int numParticlesAlive = particleSystem.GetParticles(particles);
 
-        Generate(numParticlesAlive);
+        particlePhysicsSystem.Step(Time.deltaTime, offset);
+        
+        Generate();
 
         marchingCube.SetInput(matrix);
     }
@@ -43,22 +44,32 @@ public class ParticleConnector : MonoBehaviour
         return i + j * size + k * size * size;
     }
 
-    void Generate(int numParticlesAlive)
+    void Generate()
     {
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
                 for (int k = 0; k < size; k++)
                 {
-                    matrix[GetIndex(i, j, k)] = -1;
+                    matrix[GetIndex(i, j, k)] = 0f;
                 }
-        for (int i = 0; i < numParticlesAlive; i++)
+        foreach(var particle in particlePhysicsSystem.Particles)
         {
-            AddPoint(particles[i].position + offset);
+            AddPoint(particle.Position + offset, particle.Direction);
         }
+        //for (int i = 0; i < numParticlesAlive; i++)
+        //{
+        //    AddPoint(particles[i].position + offset);
+        //}
     }
 
-    private void AddPoint(Vector3 inpoint)
+    private Vector3 prev = new Vector3(0.3f, 0, 0);
+    private Vector3 prev1 = new Vector3(0, 0.3f, 0);
+    private Vector3 prev2 = new Vector3(0, 0, 0.3f);
+
+    private void AddPoint(Vector3 inpoint, Vector3 direction)
     {
+        Debug.DrawLine(inpoint + direction.normalized*0.5f, inpoint, Color.red);
+        //return;
         var point = inpoint * scale;
 
         int i1 = (int)point.x;
@@ -92,14 +103,5 @@ public class ParticleConnector : MonoBehaviour
         matrix[GetIndex(i2, j1, k2)] += Mathf.Sqrt(x2 * x2 + y1 * y1 + z2 * z2) * multiple;
         matrix[GetIndex(i1, j2, k2)] += Mathf.Sqrt(x1 * x1 + y2 * y2 + z2 * z2) * multiple;
         matrix[GetIndex(i2, j2, k2)] += Mathf.Sqrt(x2 * x2 + y2 * y2 + z2 * z2) * multiple;
-    }
-
-    void InitializeIfNeeded()
-    {
-        if (particleSystem == null)
-            particleSystem = GetComponent<ParticleSystem>();
-
-        if (particles == null || particles.Length < particleSystem.main.maxParticles)
-            particles = new ParticleSystem.Particle[particleSystem.main.maxParticles];
     }
 }

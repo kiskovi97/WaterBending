@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.GPUBased;
 using UnityEngine;
+using System.Linq;
 
 public class BufferContainer
 {
@@ -11,7 +12,7 @@ public class BufferContainer
     public void SetAll()
     {
         inputBuffer = new ComputeBuffer(MarchingCubeParameters.BufferSize, sizeof(float));
-        vertexBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount * 3, sizeof(float));
+        vertexBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount, sizeof(float) * 3);
         triangleBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount, sizeof(int));
         triangleConnectionTable = new ComputeBuffer(256 * 16, sizeof(int));
     }
@@ -26,7 +27,6 @@ public class MarchingCubeShader : MonoBehaviour
     int[] triangles;
 
     BufferContainer bc = new BufferContainer();
-    bool isLeft = true;
 
     bool isChanged;
 
@@ -56,6 +56,7 @@ public class MarchingCubeShader : MonoBehaviour
 
         int kernelHandle = compute.FindKernel("CSMain");
         bc.triangleConnectionTable.SetData(MarchingCubeParameters.TriangleConnectionTable);
+        meshFilter.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
     }
 
     void Update()
@@ -65,12 +66,13 @@ public class MarchingCubeShader : MonoBehaviour
             ClearTriangles();
             ComputeStepFrame();
             SetMesh();
+            isChanged = false;
         }
     }
 
     private void ClearTriangles()
     {
-        for (int i = 0; i < MarchingCubeParameters.TriangleCount; i++)
+        for (long i = 0; i < MarchingCubeParameters.VertexCount; i++)
         {
             vertecies[i] = new Vector3();
             triangles[i] = -1;
@@ -90,15 +92,18 @@ public class MarchingCubeShader : MonoBehaviour
         compute.SetInt("_Width", MarchingCubeParameters.MatrixSize);
         compute.SetInt("_Height", MarchingCubeParameters.MatrixSize);
         compute.SetInt("vertexBufferSize", MarchingCubeParameters.TrianglePerBox * 3);
-
         compute.Dispatch(kernelHandle, MarchingCubeParameters.MatrixSize / 8, 
             MarchingCubeParameters.MatrixSize / 8, MarchingCubeParameters.MatrixSize / 8);
+
+       
+
     }
 
     private void SetMesh()
     {
         ClearTriangles();
 
+        meshFilter.mesh.MarkDynamic();
         meshFilter.mesh.Clear();
 
         bc.vertexBuffer.GetData(vertecies);
@@ -108,5 +113,8 @@ public class MarchingCubeShader : MonoBehaviour
         meshFilter.mesh.SetIndices(triangles, MeshTopology.Triangles, 0);
 
         meshFilter.mesh.RecalculateNormals();
+        //meshFilter.mesh.RecalculateTangents();
+        //meshFilter.mesh.Optimize();
+
     }
 }
