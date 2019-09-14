@@ -1,0 +1,97 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct Particle {
+	float3 pos;
+	float3 dir;
+};
+
+RWStructuredBuffer<Particle> PartBuffer;
+RWStructuredBuffer<Particle> OtherPartBuffer;
+int ParticleCount;
+float size;
+float deltaTime;
+float radius;
+
+
+float3 Alignment(float3 pos) {
+
+	float3 direction = float3(0, 0, 0);
+
+	for (int i = 0; i < ParticleCount; i++) {
+		float distance = length(pos - OtherPartBuffer[i].pos);
+		if (distance < radius) {
+			direction = direction + OtherPartBuffer[i].dir;
+		}
+	}
+
+	return normalize(direction);
+}
+float3 Cohesion(float3 pos) {
+
+	float3 center = float3(0, 0, 0);
+	int count = 0;
+
+	for (int i = 0; i < ParticleCount; i++) {
+		float distance = length(pos - OtherPartBuffer[i].pos);
+		if (distance < radius) {
+			count++;
+			center = center + OtherPartBuffer[i].pos;
+		}
+	}
+	center = center / count;
+	return center - pos;
+}
+float3 Separation(float3 pos) {
+	float3 force = float3(0, 0, 0);
+
+	for (int i = 0; i < ParticleCount; i++) {
+		float distance = length(pos - OtherPartBuffer[i].pos);
+		if (distance < radius) {
+			force = force + (pos - OtherPartBuffer[i].pos) * (radius - distance);
+		}
+	}
+
+	return force;
+}
+
+[numthreads(10,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	radius = 5;
+	Particle particle = OtherPartBuffer[id.x];
+    
+	int i;
+	for (i = 0; i < ParticleCount; i++) {
+
+	}
+
+	float3 force = Alignment(particle.pos) * 4;
+	force += Cohesion(particle.pos) * 3;
+	force += Separation(particle.pos) * 2;
+
+	particle.dir = normalize(force * 0.5f * deltaTime + particle.dir);
+
+	particle.pos = particle.pos + particle.dir * deltaTime * 5;
+
+	if (particle.pos.x < 0) {
+		particle.pos.x = particle.pos.x + size;
+	}
+	if (particle.pos.x >= size) {
+		particle.pos.x = particle.pos.x  - size;
+	}
+	if (particle.pos.y < 0) {
+		particle.pos.y = particle.pos.y + size;
+	}
+	if (particle.pos.y >= size) {
+		particle.pos.y = particle.pos.y - size;
+	}
+	if (particle.pos.z < 0) {
+		particle.pos.z = particle.pos.z + size;
+	}
+	if (particle.pos.z >= size) {
+		particle.pos.z = particle.pos.z - size;
+	}
+
+	PartBuffer[id.x] = particle;
+} 

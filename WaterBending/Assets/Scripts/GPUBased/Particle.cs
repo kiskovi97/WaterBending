@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Assets.Scripts.GPUBased
 {
-    class Particle
+    public struct Particle
     {
         public Vector3 Position { get; set; }
 

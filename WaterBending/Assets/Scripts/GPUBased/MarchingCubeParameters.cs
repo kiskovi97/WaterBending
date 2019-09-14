@@ -10,6 +10,7 @@ namespace Assets.Scripts.GPUBased
     {
         public static readonly int TrianglePerBox = 5; //5;
         public static readonly int MatrixSize = 32;
+        public static readonly float radius = 2f;
         public static readonly int BufferSize = MatrixSize * MatrixSize * MatrixSize;
         public static readonly int TriangleCount = BufferSize * TrianglePerBox;
         public static readonly int VertexCount = TriangleCount * 3;

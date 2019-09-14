@@ -6,9 +6,9 @@ using UnityEngine;
 public class ParticleConnector : MonoBehaviour
 {
     private readonly float scale = 1f;
-    private readonly float radius = 2f;
     private readonly float multiple = 2f;
     public MarchingCubeShader marchingCube;
+    public BoidParticleShader particleShader;
 
     private ParticlePhysicsSystem particlePhysicsSystem;
     private new ParticleSystem particleSystem;
@@ -25,7 +25,7 @@ public class ParticleConnector : MonoBehaviour
     void Start()
     {
         size = MarchingCubeParameters.MatrixSize;
-        particlePhysicsSystem = new ParticlePhysicsSystem(offset);
+        particlePhysicsSystem = new ParticlePhysicsSystem(offset, particleShader);
         matrix = new float[size * size * size];
 
         if (marchingCube == null)
@@ -42,7 +42,6 @@ public class ParticleConnector : MonoBehaviour
     private void LateUpdate()
     {
         offset = transform.position;
-        particlePhysicsSystem.Step(Time.deltaTime, offset);
 
         if (UseParticleSystem && particleSystem != null)
         {
@@ -50,6 +49,7 @@ public class ParticleConnector : MonoBehaviour
             Generate(numParticlesAlive);
         } else
         {
+            particlePhysicsSystem.Step(Time.deltaTime, offset);
             Generate(0);
         }
 
@@ -82,8 +82,6 @@ public class ParticleConnector : MonoBehaviour
                 AddPoint(particle.Position + offset, particle.Direction);
             }
         }
-
-        
     }
 
     private void AddPoint(Vector3 inpoint, Vector3 direction)
@@ -99,9 +97,9 @@ public class ParticleConnector : MonoBehaviour
             //Debug.DrawLine(index, inpoint, Color.cyan);
             var distance = (point - index).magnitude;
             
-            if (distance < radius && IndexIsOkay(index))
+            if (distance < MarchingCubeParameters.radius && IndexIsOkay(index))
             {
-                matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / radius)) * multiple;
+                matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / MarchingCubeParameters.radius)) * multiple;
             }
         }
     }
@@ -115,6 +113,7 @@ public class ParticleConnector : MonoBehaviour
 
     private Vector3[] GetCloseIndexes(Vector3 point)
     {
+        var radius = MarchingCubeParameters.radius;
         int minX = Mathf.RoundToInt(point.x - radius);
         int minY = Mathf.RoundToInt(point.y - radius);
         int minZ = Mathf.RoundToInt(point.z - radius);
