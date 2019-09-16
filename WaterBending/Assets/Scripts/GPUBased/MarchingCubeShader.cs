@@ -92,6 +92,14 @@ public class MarchingCubeShader : MonoBehaviour
         compute.SetInt("_Width", MarchingCubeParameters.MatrixSize);
         compute.SetInt("_Height", MarchingCubeParameters.MatrixSize);
         compute.SetInt("vertexBufferSize", MarchingCubeParameters.TrianglePerBox * 3);
+
+
+        var Map = Matrix4x4.Translate(Vector3.one * MarchingCubeParameters.MatrixSize / -2);
+        var scale = 1f / MarchingCubeParameters.MatrixSize;
+        var Scale = new Matrix4x4(new Vector4(scale, 0, 0, 0), new Vector4(0, scale, 0, 0), new Vector4(0, 0, scale, 0), new Vector4(0, 0, 0, 1));
+
+        compute.SetMatrix("ToWorld",  Scale * Map);
+
         compute.Dispatch(kernelHandle, MarchingCubeParameters.MatrixSize / 8, 
             MarchingCubeParameters.MatrixSize / 8, MarchingCubeParameters.MatrixSize / 8);
 
@@ -107,6 +115,7 @@ public class MarchingCubeShader : MonoBehaviour
         meshFilter.mesh.Clear();
 
         bc.vertexBuffer.GetData(vertecies);
+
         meshFilter.mesh.vertices = vertecies;
 
         bc.triangleBuffer.GetData(triangles);

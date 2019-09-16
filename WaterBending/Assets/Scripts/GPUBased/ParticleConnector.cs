@@ -41,7 +41,7 @@ public class ParticleConnector : MonoBehaviour
     // Update is called once per frame
     private void LateUpdate()
     {
-        offset = transform.position;
+        offset = transform.localPosition;
 
         if (UseParticleSystem && particleSystem != null)
         {
@@ -73,7 +73,9 @@ public class ParticleConnector : MonoBehaviour
         {
             for (int i = 0; i < numParticlesAlive; i++)
             {
-                AddPoint(particles[i].position + offset, Vector3.up);
+                var position = particles[i].position;
+                position = transform.InverseTransformPoint(position) + transform.localPosition;
+                AddPoint(position * size + Vector3.one * size / 2f, Vector3.up);
             }
         } else
         {
@@ -86,7 +88,7 @@ public class ParticleConnector : MonoBehaviour
 
     private void AddPoint(Vector3 inpoint, Vector3 direction)
     {
-        Debug.DrawLine(inpoint + direction.normalized * 0.5f, inpoint, Color.red);
+        Debug.DrawLine(inpoint / size + direction.normalized * 0.2f, inpoint / size, Color.red);
         //return;
         var point = inpoint * scale;
 
