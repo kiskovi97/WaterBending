@@ -7,26 +7,29 @@ public class BufferContainer
     public ComputeBuffer inputBuffer;
     public ComputeBuffer triangleConnectionTable;
     public ComputeBuffer vertexBuffer;
+    public Vector3[] vertecies;
     public ComputeBuffer triangleBuffer;
+    public int[] triangles;
 
     public void SetAll()
     {
+        vertecies = new Vector3[MarchingCubeParameters.VertexCount];
+        triangles = new int[MarchingCubeParameters.VertexCount];
         inputBuffer = new ComputeBuffer(MarchingCubeParameters.BufferSize, sizeof(float));
         vertexBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount, sizeof(float) * 3);
         triangleBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount, sizeof(int));
         triangleConnectionTable = new ComputeBuffer(256 * 16, sizeof(int));
+
+        triangleConnectionTable.SetData(MarchingCubeParameters.TriangleConnectionTable);
     }
 }
 
 public class MarchingCubeShader : MonoBehaviour
 {
     public ComputeShader compute;
-    MeshFilter meshFilter;
+    private MeshFilter meshFilter;
 
-    Vector3[] vertecies;
-    int[] triangles;
-
-    BufferContainer bc = new BufferContainer();
+    private BufferContainer bc = new BufferContainer();
 
     bool isChanged;
 
@@ -39,23 +42,15 @@ public class MarchingCubeShader : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        isChanged = true;
+        isChanged = false;
 
         if (MarchingCubeParameters.MatrixSize % 8 != 0)
             throw new System.ArgumentException("MatrixSize must be divisible be 8");
 
         meshFilter = GetComponent<MeshFilter>();
 
-        vertecies = new Vector3[MarchingCubeParameters.VertexCount];
-        triangles = new int[MarchingCubeParameters.VertexCount];
-
         bc.SetAll();
 
-        var inputList = new float[MarchingCubeParameters.BufferSize];
-        SetInput(inputList);
-
-        int kernelHandle = compute.FindKernel("CSMain");
-        bc.triangleConnectionTable.SetData(MarchingCubeParameters.TriangleConnectionTable);
         meshFilter.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
     }
 
@@ -67,6 +62,9 @@ public class MarchingCubeShader : MonoBehaviour
             ComputeStepFrame();
             SetMesh();
             isChanged = false;
+        } else
+        {
+            meshFilter.mesh.Clear();
         }
     }
 
@@ -74,8 +72,8 @@ public class MarchingCubeShader : MonoBehaviour
     {
         for (long i = 0; i < MarchingCubeParameters.VertexCount; i++)
         {
-            vertecies[i] = new Vector3();
-            triangles[i] = -1;
+            bc.vertecies[i] = new Vector3();
+            bc.triangles[i] = -1;
         }
     }
 
@@ -114,12 +112,12 @@ public class MarchingCubeShader : MonoBehaviour
         meshFilter.mesh.MarkDynamic();
         meshFilter.mesh.Clear();
 
-        bc.vertexBuffer.GetData(vertecies);
+        bc.vertexBuffer.GetData(bc.vertecies);
 
-        meshFilter.mesh.vertices = vertecies;
+        meshFilter.mesh.vertices = bc.vertecies;
 
-        bc.triangleBuffer.GetData(triangles);
-        meshFilter.mesh.SetIndices(triangles, MeshTopology.Triangles, 0);
+        bc.triangleBuffer.GetData(bc.triangles);
+        meshFilter.mesh.SetIndices(bc.triangles, MeshTopology.Triangles, 0);
 
         meshFilter.mesh.RecalculateNormals();
         //meshFilter.mesh.RecalculateTangents();

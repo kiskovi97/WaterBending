@@ -9,7 +9,7 @@ namespace Assets.Scripts.GPUBased
     class MarchingCubeParameters
     {
         public static readonly int TrianglePerBox = 5; //5;
-        public static readonly int MatrixSize = 40;
+        public static readonly int MatrixSize = 16;
         public static readonly float radius = 2f;
         public static readonly int BufferSize = MatrixSize * MatrixSize * MatrixSize;
         public static readonly int TriangleCount = BufferSize * TrianglePerBox;
