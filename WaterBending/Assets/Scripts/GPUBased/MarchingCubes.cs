@@ -6,7 +6,8 @@ namespace Assets.Scripts.GPUBased
 {
     public class MarchingCubes : MonoBehaviour
     {
-        public MarchingCubeShader[] marchingCubes;
+        private MarchingCubeShader[] marchingCubes;
+        public GameObject marchingCubesObject;
 
         public new ParticleSystem particleSystem;
 
@@ -20,8 +21,25 @@ namespace Assets.Scripts.GPUBased
             size = MarchingCubeParameters.MatrixSize;
             matrix = new float[size * size * size];
 
+            var shaders = new List<MarchingCubeShader>();
+
             if (particles == null || particles.Length < particleSystem.main.maxParticles)
                 particles = new ParticleSystem.Particle[particleSystem.main.maxParticles];
+
+            for (int i=0; i<5; i++) 
+                for (int j=0; j<5; j++)
+                    for (int k = 0; k < 5; k++)
+                    {
+                    var obj = Instantiate(marchingCubesObject);
+                    var cube = obj.GetComponent<MarchingCubeShader>();
+                    shaders.Add(cube);
+                    var size = MarchingCubeParameters.MatrixSize;
+                    var correction = ((size - 1f) / size);
+                    obj.transform.position = new Vector3(i * obj.transform.lossyScale.x * correction, 
+                        j * obj.transform.lossyScale.y * correction, 
+                        k * obj.transform.lossyScale.z * correction);
+                }
+            marchingCubes = shaders.ToArray();
         }
 
         private void LateUpdate()
@@ -55,7 +73,7 @@ namespace Assets.Scripts.GPUBased
             return list.ToArray();
         }
 
-        private float radius = 1.5f;
+        private float radius = 1f;
 
         public bool IsInCube(Vector3 scale, Vector3 pos)
         {
