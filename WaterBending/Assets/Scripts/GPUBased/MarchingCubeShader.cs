@@ -27,7 +27,7 @@ public class BufferContainer
 public class MarchingCubeShader : MonoBehaviour
 {
     public ComputeShader compute;
-    private MeshFilter meshFilter;
+    public MeshFilter meshFilter;
 
     private BufferContainer bc = new BufferContainer();
 

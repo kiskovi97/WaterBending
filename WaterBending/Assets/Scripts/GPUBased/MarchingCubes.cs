@@ -210,6 +210,7 @@ namespace Assets.Scripts.GPUBased
             }
             var lastIndex = array[array.Length - 1];
             firstCube.transform.position += offset * size * array.Length;
+            firstCube.meshFilter.mesh.Clear();
             Cubes[lastIndex] = firstCube;
         }
 
@@ -225,11 +226,15 @@ namespace Assets.Scripts.GPUBased
         private ParticleSystem.Particle[] particles;
 
         private static int size;
+        private static float correction;
         private float[] matrix;
+
+        private float radius = 1.5f;
 
         private void Start()
         {
             size = MarchingCubeParameters.MatrixSize;
+            correction = (size - 1f) / (size);
             matrix = new float[size * size * size];
 
             if (particles == null || particles.Length < particleSystem.main.maxParticles)
@@ -237,34 +242,34 @@ namespace Assets.Scripts.GPUBased
 
             cubeCollection = new CubeCollection
             {
-                size = marchingCubesObject.transform.lossyScale.x * (size - 1f) / (size)
+                size = marchingCubesObject.transform.lossyScale.x * correction
             };
             cubeCollection.Init(marchingCubesObject, particleSystem.transform.position);
         }
 
         private void LateUpdate()
         {
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).x < -marchingCubesObject.transform.lossyScale.x)
+            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).x < -marchingCubesObject.transform.lossyScale.x * correction / 2)
             {
                 cubeCollection.MoveLeft();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).x > marchingCubesObject.transform.lossyScale.x)
+            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).x > marchingCubesObject.transform.lossyScale.x * correction / 2)
             {
                 cubeCollection.MoveRight();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).y < -marchingCubesObject.transform.lossyScale.y)
+            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).y < -marchingCubesObject.transform.lossyScale.y * correction / 2)
             {
                 cubeCollection.MoveUp();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).y > marchingCubesObject.transform.lossyScale.y)
+            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).y > marchingCubesObject.transform.lossyScale.y * correction / 2)
             {
                 cubeCollection.MoveDown();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).z < -marchingCubesObject.transform.lossyScale.z)
+            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).z < -marchingCubesObject.transform.lossyScale.z * correction / 2)
             {
                 cubeCollection.MoveBack();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).z > marchingCubesObject.transform.lossyScale.z)
+            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).z > marchingCubesObject.transform.lossyScale.z * correction / 2)
             {
                 cubeCollection.MoveFront();
             }
@@ -274,8 +279,10 @@ namespace Assets.Scripts.GPUBased
             {
                 if (cube != null)
                 {
-                    Generate(numParticlesAlive, cube.transform);
-                    cube.SetInput(matrix);
+                    if (!Generate(numParticlesAlive, cube.transform))
+                    {
+                        cube.SetInput(matrix);
+                    }
                 }
             }
 
@@ -297,8 +304,6 @@ namespace Assets.Scripts.GPUBased
             return list.ToArray();
         }
 
-        private float radius = 1.2f;
-
         public bool IsInCube(Vector3 scale, Vector3 pos)
         {
             var a = Mathf.Abs(pos.x) < scale.x * radius;
@@ -312,8 +317,9 @@ namespace Assets.Scripts.GPUBased
             return i + j * size + k * size * size;
         }
 
-        void Generate(int numParticlesAlive, Transform cubeTransform)
+        bool Generate(int numParticlesAlive, Transform cubeTransform)
         {
+            var pure = true;
             for (int i = 0; i < size; i++)
                 for (int j = 0; j < size; j++)
                     for (int k = 0; k < size; k++)
@@ -324,12 +330,14 @@ namespace Assets.Scripts.GPUBased
             {
                 var position = particles[i].position;
                 position = cubeTransform.InverseTransformPoint(position);
-                AddPoint(position * size + Vector3.one * size / 2f, Vector3.up);
+                pure = AddPoint(position * size + Vector3.one * size / 2f, Vector3.up) && pure;
             }
+            return pure;
         }
 
-        private void AddPoint(Vector3 inpoint, Vector3 direction)
+        private bool AddPoint(Vector3 inpoint, Vector3 direction)
         {
+            var pure = true;
             Debug.DrawLine(inpoint / size + direction.normalized * 0.2f, inpoint / size, Color.red);
             //return;
             var point = inpoint;
@@ -344,8 +352,10 @@ namespace Assets.Scripts.GPUBased
                 if (distance < MarchingCubeParameters.radius && IndexIsOkay(index))
                 {
                     matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / MarchingCubeParameters.radius));
+                    pure = false;
                 }
             }
+            return pure;
         }
 
         private bool IndexIsOkay(Vector3 point)
