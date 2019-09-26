@@ -59,12 +59,12 @@ public class MoveParticle : MonoBehaviour
         if (OVRInput.Get(OVRInput.Button.PrimaryHandTrigger))
         {
             var position = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
-            center = position;
+            goal = position;
         }
         if (OVRInput.Get(OVRInput.Button.SecondaryHandTrigger))
         {
             var position = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
-            center = position;
+            goal = position;
         }
     }
 
