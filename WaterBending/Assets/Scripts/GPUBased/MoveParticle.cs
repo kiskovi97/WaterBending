@@ -20,18 +20,8 @@ public class MoveParticle : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.mousePresent && Input.GetMouseButton(0))
-        {
-            var v3 = Input.mousePosition;
-            v3.z = 196.5f;
-            v3 = Camera.main.ScreenToWorldPoint(v3);
-            center = v3;
-            goal = center;
-        } else
-        {
-            angel += speed * 4f * Time.deltaTime;
-            goal = GetByAngle();
-        }
+        VRUpdate();
+       
 
         var current = transform.position;
 
@@ -45,6 +35,37 @@ public class MoveParticle : MonoBehaviour
         }
         Move(dir);
 
+    }
+
+    private void NonVRUpdate()
+    {
+        if (Input.mousePresent && Input.GetMouseButton(0))
+        {
+            var v3 = Input.mousePosition;
+            v3.z = 196.5f;
+            v3 = Camera.main.ScreenToWorldPoint(v3);
+            center = v3;
+            goal = center;
+        }
+        else
+        {
+            angel += speed * 4f * Time.deltaTime;
+            goal = GetByAngle();
+        }
+    }
+
+    private void VRUpdate()
+    {
+        if (OVRInput.Get(OVRInput.Button.PrimaryHandTrigger))
+        {
+            var position = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
+            center = position;
+        }
+        if (OVRInput.Get(OVRInput.Button.SecondaryHandTrigger))
+        {
+            var position = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
+            center = position;
+        }
     }
 
     private void Move(Vector3 dir)
