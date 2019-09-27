@@ -338,7 +338,6 @@ namespace Assets.Scripts.GPUBased
         private bool AddPoint(Vector3 inpoint, Vector3 direction)
         {
             var pure = true;
-            Debug.DrawLine(inpoint / size + direction.normalized * 0.2f, inpoint / size, Color.red);
             //return;
             var point = inpoint;
 

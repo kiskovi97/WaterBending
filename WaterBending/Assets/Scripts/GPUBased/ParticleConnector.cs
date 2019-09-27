@@ -88,7 +88,6 @@ public class ParticleConnector : MonoBehaviour
 
     private void AddPoint(Vector3 inpoint, Vector3 direction)
     {
-        Debug.DrawLine(inpoint / size + direction.normalized * 0.2f, inpoint / size, Color.red);
         //return;
         var point = inpoint * scale;
 

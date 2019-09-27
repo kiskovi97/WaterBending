@@ -10,11 +10,12 @@ public class MoveParticle : MonoBehaviour
     public float distance = 10f;
     public float speed = 2f;
     private float angel = 0;
-    Rigidbody rigidbody;
+    new Rigidbody rigidbody;
 
     private void Start()
     {
         rigidbody = GetComponent<Rigidbody>();
+        goal = transform.position;
     }
 
     // Update is called once per frame
