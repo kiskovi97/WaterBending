@@ -11,6 +11,7 @@ public class MoveParticle : MonoBehaviour
     public float speed = 2f;
     private float angel = 0;
     new Rigidbody rigidbody;
+    public Transform TrackingSpace;
 
     private void Start()
     {
@@ -22,7 +23,6 @@ public class MoveParticle : MonoBehaviour
     void Update()
     {
         VRUpdate();
-       
 
         var current = transform.position;
 
@@ -60,12 +60,18 @@ public class MoveParticle : MonoBehaviour
         if (OVRInput.Get(OVRInput.Button.PrimaryHandTrigger))
         {
             var position = OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
-            goal = position;
+            if (TrackingSpace != null)
+            {
+                goal = TrackingSpace.TransformPoint(position);
+            }
         }
         if (OVRInput.Get(OVRInput.Button.SecondaryHandTrigger))
         {
             var position = OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
-            goal = position;
+            if (TrackingSpace != null)
+            {
+                goal = TrackingSpace.TransformPoint(position);
+            }
         }
     }
 

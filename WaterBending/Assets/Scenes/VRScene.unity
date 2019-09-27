@@ -217,6 +217,11 @@ PrefabInstance:
       propertyPath: m_Intensity
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4459100455935138029, guid: 65ae5d034cd6cea42805b4a3a2b110eb,
+        type: 3}
+      propertyPath: TrackingSpace
+      value: 
+      objectReference: {fileID: 1492646462}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 65ae5d034cd6cea42805b4a3a2b110eb, type: 3}
 --- !u!1 &687915402 stripped
@@ -476,6 +481,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ce816f2e6abb0504092c23ed9b970dfd, type: 3}
+--- !u!4 &1492646462 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 462066, guid: ce816f2e6abb0504092c23ed9b970dfd,
+    type: 3}
+  m_PrefabInstance: {fileID: 1492646461}
+  m_PrefabAsset: {fileID: 0}
 --- !u!198 &1626625722 stripped
 ParticleSystem:
   m_CorrespondingSourceObject: {fileID: 4459100455935138031, guid: 65ae5d034cd6cea42805b4a3a2b110eb,
