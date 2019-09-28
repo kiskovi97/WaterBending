@@ -249,33 +249,35 @@ namespace Assets.Scripts.GPUBased
 
         private void LateUpdate()
         {
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).x < -marchingCubesObject.transform.lossyScale.x * correction / 2)
+            var dir = cubeCollection.Cubes[0].transform.position - particleSystem.transform.position;
+            var scale = marchingCubesObject.transform.lossyScale;
+            if (dir.x < -scale.x * correction / 2)
             {
                 cubeCollection.MoveLeft();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).x > marchingCubesObject.transform.lossyScale.x * correction / 2)
+            if (dir.x > scale.x * correction / 2)
             {
                 cubeCollection.MoveRight();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).y < -marchingCubesObject.transform.lossyScale.y * correction / 2)
+            if (dir.y < -scale.y * correction / 2)
             {
                 cubeCollection.MoveUp();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).y > marchingCubesObject.transform.lossyScale.y * correction / 2)
+            if (dir.y > scale.y * correction / 2)
             {
                 cubeCollection.MoveDown();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).z < -marchingCubesObject.transform.lossyScale.z * correction / 2)
+            if (dir.z < -scale.z * correction / 2)
             {
                 cubeCollection.MoveBack();
             }
-            if ((cubeCollection.Cubes[0].transform.position - particleSystem.transform.position).z > marchingCubesObject.transform.lossyScale.z * correction / 2)
+            if (dir.z > scale.z * correction / 2)
             {
                 cubeCollection.MoveFront();
             }
+
             int numParticlesAlive = particleSystem.GetParticles(particles);
-            var cubes = GetShader(particleSystem.transform.position);
-            foreach (var cube in cubes)
+            foreach (var cube in cubeCollection.Cubes)
             {
                 if (cube != null)
                 {
@@ -286,22 +288,6 @@ namespace Assets.Scripts.GPUBased
                 }
             }
 
-        }
-
-        private MarchingCubeShader[] GetShader(Vector3 position)
-        {
-            var list = new List<MarchingCubeShader>();
-            foreach (MarchingCubeShader cube in cubeCollection.Cubes)
-            {
-                var pos = cube.transform.position;
-                var scale = cube.transform.lossyScale;
-                if (IsInCube(scale, position - pos))
-                {
-                    list.Add(cube);
-                }
-
-            }
-            return list.ToArray();
         }
 
         public bool IsInCube(Vector3 scale, Vector3 pos)
@@ -338,21 +324,20 @@ namespace Assets.Scripts.GPUBased
         private bool AddPoint(Vector3 inpoint, Vector3 direction)
         {
             var pure = true;
-            Debug.DrawLine(inpoint / size + direction.normalized * 0.2f, inpoint / size, Color.red);
-            //return;
             var point = inpoint;
 
             var indexes = GetCloseIndexes(point);
-
             foreach (var index in indexes)
             {
-                //Debug.DrawLine(index, inpoint, Color.cyan);
-                var distance = (point - index).magnitude;
-
-                if (distance < MarchingCubeParameters.radius && IndexIsOkay(index))
+                if (IndexIsOkay(index))
                 {
-                    matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / MarchingCubeParameters.radius));
-                    pure = false;
+                    var distance = (point - index).magnitude;
+
+                    if (distance < MarchingCubeParameters.radius)
+                    {
+                        matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / MarchingCubeParameters.radius));
+                        pure = false;
+                    }
                 }
             }
             return pure;
