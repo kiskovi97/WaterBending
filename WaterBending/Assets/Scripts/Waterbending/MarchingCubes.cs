@@ -1,43 +1,57 @@
-﻿using System.Collections;
+﻿using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Assets.Scripts.GPUBased
 {
     public class CubeCollection
     {
-        public MarchingCubeShader[] Cubes { get; internal set; }
-        public float size = 20;
+        public IEnumerable<MarchingCube> Cubes { get
+            {
+                return internalCubes.Take(7);
+            }
+        }
+        private MarchingCube[] internalCubes { get; set; }
+        public Vector3 position { get { return internalCubes[0].position;  } }
+
+        public float cubeSize = 20;
+        public int matrixSize = 16;
 
         static readonly Vector3[] offsets = new Vector3[]
         {
-            new Vector3(), Vector3.left , Vector3.left *2,
-            Vector3.left + Vector3.down, Vector3.left + Vector3.up, Vector3.left + Vector3.forward, Vector3.left + Vector3.back,
-            Vector3.right , Vector3.right *2,
+            new Vector3(), Vector3.left , Vector3.right ,Vector3.up,Vector3.down ,Vector3.forward ,Vector3.back ,
+             
+            Vector3.left * 2, Vector3.right *2,
             Vector3.right + Vector3.down,Vector3.right + Vector3.up,Vector3.right + Vector3.forward,Vector3.right + Vector3.back,
 
-            Vector3.up , Vector3.up *2,
+            Vector3.left + Vector3.down, Vector3.up * 2,
             Vector3.up + Vector3.forward,Vector3.up + Vector3.back,
-            Vector3.down , Vector3.down *2,
+            Vector3.left + Vector3.up, Vector3.down *2,
             Vector3.down + Vector3.forward,Vector3.down + Vector3.back,
 
-            Vector3.forward , Vector3.forward *2,
-            Vector3.back , Vector3.back *2,
+            Vector3.left + Vector3.forward,Vector3.forward *2,
+            Vector3.left + Vector3.back,Vector3.back *2,
         };
 
         static int C = 0;
         static int L = 1;
-        static int LL = 2;
-        static int LD = 3;
-        static int DL = 3;
-        static int LU = 4;
-        static int UL = 4;
-        static int LF = 5;
-        static int FL = 5;
-        static int LB = 6;
-        static int BL = 6;
+        static int R = 2;
+        static int U = 3;
+        static int D = 4;
+        static int F = 5;
+        static int B = 6;
 
-        static int R = 7;
+        static int LL = 7;
+        static int LD = 13;
+        static int DL = 13;
+        static int LU = 17;
+        static int UL = 17;
+        static int LF = 21;
+        static int FL = 21;
+        static int LB = 23;
+        static int BL = 23;
+
         static int RR = 8;
         static int RD = 9;
         static int DR = 9;
@@ -48,32 +62,29 @@ namespace Assets.Scripts.GPUBased
         static int RB = 12;
         static int BR = 12;
 
-        static int U = 13;
         static int UU = 14;
         static int UF = 15;
         static int FU = 15;
         static int UB = 16;
         static int BU = 16;
 
-        static int D = 17;
         static int DD = 18;
         static int DF = 19;
         static int FD = 19;
         static int DB = 20;
         static int BD = 20;
 
-        static int F = 21;
         static int FF = 22;
-        static int B = 23;
         static int BB = 24;
 
         public void Init(GameObject template, Vector3 position)
         {
-            Cubes = new MarchingCubeShader[offsets.Length];
+            internalCubes = new MarchingCube[offsets.Length];
             for (int i = 0; i < offsets.Length; i++)
             {
-                var obj = Object.Instantiate(template, position + offsets[i] * size, new Quaternion());
-                Cubes[i] = obj.GetComponent<MarchingCubeShader>();
+                var obj = Object.Instantiate(template, position + offsets[i] * cubeSize, new Quaternion());
+                var marchingCubeShader = obj.GetComponent<MarchingCubeShader>();
+                internalCubes[i] = new MarchingCube(matrixSize, marchingCubeShader);
             }
 
         }
@@ -201,17 +212,16 @@ namespace Assets.Scripts.GPUBased
         private void ShiftArray(int[] array, Vector3 offset)
         {
             var firstIndex = array[0];
-            var firstCube = Cubes[firstIndex];
+            var firstCube = internalCubes[firstIndex];
             for (int i = 0; i < array.Length - 1; i++)
             {
                 var prevIndex = array[i];
                 var nextIndex = array[i + 1];
-                Cubes[prevIndex] = Cubes[nextIndex];
+                internalCubes[prevIndex] = internalCubes[nextIndex];
             }
             var lastIndex = array[array.Length - 1];
-            firstCube.transform.position += offset * size * array.Length;
-            firstCube.meshFilter.mesh.Clear();
-            Cubes[lastIndex] = firstCube;
+            firstCube.Shift(offset * cubeSize * array.Length);
+            internalCubes[lastIndex] = firstCube;
         }
 
     }
@@ -227,7 +237,6 @@ namespace Assets.Scripts.GPUBased
 
         private static int size;
         private static float correction;
-        private float[] matrix;
 
         private float radius = 1.5f;
 
@@ -235,21 +244,21 @@ namespace Assets.Scripts.GPUBased
         {
             size = MarchingCubeParameters.MatrixSize;
             correction = (size - 1f) / (size);
-            matrix = new float[size * size * size];
 
             if (particles == null || particles.Length < particleSystem.main.maxParticles)
                 particles = new ParticleSystem.Particle[particleSystem.main.maxParticles];
 
             cubeCollection = new CubeCollection
             {
-                size = marchingCubesObject.transform.lossyScale.x * correction
+                cubeSize = marchingCubesObject.transform.lossyScale.x * correction,
+                matrixSize = size
             };
             cubeCollection.Init(marchingCubesObject, particleSystem.transform.position);
         }
 
         private void LateUpdate()
         {
-            var dir = cubeCollection.Cubes[0].transform.position - particleSystem.transform.position;
+            var dir = cubeCollection.position - particleSystem.transform.position;
             var scale = marchingCubesObject.transform.lossyScale;
             if (dir.x < -scale.x * correction / 2)
             {
@@ -277,97 +286,15 @@ namespace Assets.Scripts.GPUBased
             }
 
             int numParticlesAlive = particleSystem.GetParticles(particles);
+            int i = 0;
             foreach (var cube in cubeCollection.Cubes)
             {
                 if (cube != null)
                 {
-                    if (!Generate(numParticlesAlive, cube.transform))
-                    {
-                        cube.SetInput(matrix);
-                    }
+                    cube.Generate(numParticlesAlive, particles);
+                    cube.SetMatrix();
                 }
             }
-
-        }
-
-        public bool IsInCube(Vector3 scale, Vector3 pos)
-        {
-            var a = Mathf.Abs(pos.x) < scale.x * radius;
-            var b = Mathf.Abs(pos.y) < scale.y * radius;
-            var c = Mathf.Abs(pos.z) < scale.z * radius;
-            return a && b && c;
-        }
-
-        int GetIndex(int i, int j, int k)
-        {
-            return i + j * size + k * size * size;
-        }
-
-        bool Generate(int numParticlesAlive, Transform cubeTransform)
-        {
-            var pure = true;
-            for (int i = 0; i < size; i++)
-                for (int j = 0; j < size; j++)
-                    for (int k = 0; k < size; k++)
-                    {
-                        matrix[GetIndex(i, j, k)] = 0f;
-                    }
-            for (int i = 0; i < numParticlesAlive; i++)
-            {
-                var position = particles[i].position;
-                position = cubeTransform.InverseTransformPoint(position);
-                pure = AddPoint(position * size + Vector3.one * size / 2f, Vector3.up) && pure;
-            }
-            return pure;
-        }
-
-        private bool AddPoint(Vector3 inpoint, Vector3 direction)
-        {
-            var pure = true;
-            var point = inpoint;
-
-            var indexes = GetCloseIndexes(point);
-            foreach (var index in indexes)
-            {
-                if (IndexIsOkay(index))
-                {
-                    var distance = (point - index).magnitude;
-
-                    if (distance < MarchingCubeParameters.radius)
-                    {
-                        matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / MarchingCubeParameters.radius));
-                        pure = false;
-                    }
-                }
-            }
-            return pure;
-        }
-
-        private bool IndexIsOkay(Vector3 point)
-        {
-            return point.x >= 0 && point.x < size
-                && point.y >= 0 && point.y < size
-                && point.z >= 0 && point.z < size;
-        }
-
-        private Vector3[] GetCloseIndexes(Vector3 point)
-        {
-            var radius = MarchingCubeParameters.radius;
-            int minX = Mathf.RoundToInt(point.x - radius);
-            int minY = Mathf.RoundToInt(point.y - radius);
-            int minZ = Mathf.RoundToInt(point.z - radius);
-
-            int maxX = Mathf.RoundToInt(point.x + radius);
-            int maxY = Mathf.RoundToInt(point.y + radius);
-            int maxZ = Mathf.RoundToInt(point.z + radius);
-            var list = new List<Vector3>();
-            for (int i = minX; i <= maxX; i++)
-                for (int j = minY; j <= maxY; j++)
-                    for (int k = minZ; k <= maxZ; k++)
-                    {
-                        list.Add(new Vector3(i, j, k));
-                    }
-            return list.ToArray();
         }
     }
 }

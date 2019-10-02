@@ -8,12 +8,14 @@ namespace Assets.Scripts.GPUBased
 {
     class MarchingCubeParameters
     {
-        public static readonly int TrianglePerBox = 5; //5;
-        public static readonly int MatrixSize = 16;
+        public static int MatrixMultiplyer = 2;
+        public static float Target = 0.5f;
+        public static int TrianglePerBox = 5; //5;
+        public static int MatrixSize { get { return MatrixMultiplyer * 8; } }
         public static readonly float radius = 2f;
-        public static readonly int BufferSize = MatrixSize * MatrixSize * MatrixSize;
-        public static readonly int TriangleCount = BufferSize * TrianglePerBox;
-        public static readonly int VertexCount = TriangleCount * 3;
+        public static int BufferSize { get { return MatrixSize * MatrixSize * MatrixSize; } }
+        public static int TriangleCount { get { return BufferSize * TrianglePerBox; } }
+        public static int VertexCount { get { return TriangleCount * 3; } }
 
         public readonly static int[,] TriangleConnectionTable = new int[,]
         {

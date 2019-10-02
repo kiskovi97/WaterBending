@@ -13,7 +13,7 @@ int vertexBufferSize;
 int _Width;
 int _Height;
 
-float _Target = 0.5f;
+float Target;
 
 float4x4 ToWorld;
 
@@ -40,7 +40,7 @@ static float3 vertexOffset[8] =
 float GetOffset(float v1, float v2)
 {
 	float delta = v2 - v1;
-	return (delta == 0.0f) ? 0.5f : (_Target - v1) / delta;
+	return (delta == 0.0f) ? 0.5f : (Target - v1) / delta;
 }
 
 void FillCube(int x, int y, int z, out float cube[8])
@@ -84,7 +84,6 @@ bool IsOnEdge(float3 index) {
 [numthreads(8, 8, 8)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
-	_Target = 0.5f;
 	uint index = id.x + id.y * matrixSize + id.z * matrixSize * matrixSize;
 
 	float cube[8];
@@ -103,7 +102,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
 	//Find which vertices are inside of the surface and which are outside
 	for (i = 0; i < 8; i++)
-		if (cube[i] <= _Target) flagIndex |= 1 << i;
+		if (cube[i] <= Target) flagIndex |= 1 << i;
 
 	for (i = 0; i < 12; i++)
 	{

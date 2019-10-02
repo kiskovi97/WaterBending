@@ -11,8 +11,9 @@ public class BufferContainer
     public ComputeBuffer triangleBuffer;
     public int[] triangles;
 
-    public void SetAll()
+    public void SetAll(int multiplyer)
     {
+        MarchingCubeParameters.MatrixMultiplyer = multiplyer;
         vertecies = new Vector3[MarchingCubeParameters.VertexCount];
         triangles = new int[MarchingCubeParameters.VertexCount];
         inputBuffer = new ComputeBuffer(MarchingCubeParameters.BufferSize, sizeof(float));
@@ -26,12 +27,14 @@ public class BufferContainer
 
 public class MarchingCubeShader : MonoBehaviour
 {
+    public int multiplyer = 2;
+    public bool ClearIfEnded = true;
     public ComputeShader compute;
     public MeshFilter meshFilter;
 
     private BufferContainer bc = new BufferContainer();
 
-    bool isChanged;
+    bool isChanged = false;
 
     public void SetInput(float[] inputList)
     {
@@ -42,14 +45,12 @@ public class MarchingCubeShader : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        isChanged = false;
-
         if (MarchingCubeParameters.MatrixSize % 8 != 0)
             throw new System.ArgumentException("MatrixSize must be divisible be 8");
 
         meshFilter = GetComponent<MeshFilter>();
 
-        bc.SetAll();
+        bc.SetAll(multiplyer);
 
         meshFilter.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
     }
@@ -64,7 +65,10 @@ public class MarchingCubeShader : MonoBehaviour
             isChanged = false;
         } else
         {
-            meshFilter.mesh.Clear();
+            if (ClearIfEnded)
+            {
+                meshFilter.mesh.Clear();
+            }
         }
     }
 
@@ -89,6 +93,7 @@ public class MarchingCubeShader : MonoBehaviour
         compute.SetInt("matrixSize", MarchingCubeParameters.MatrixSize);
         compute.SetInt("_Width", MarchingCubeParameters.MatrixSize);
         compute.SetInt("_Height", MarchingCubeParameters.MatrixSize);
+        compute.SetFloat("Target", MarchingCubeParameters.Target);
         compute.SetInt("vertexBufferSize", MarchingCubeParameters.TrianglePerBox * 3);
 
 
