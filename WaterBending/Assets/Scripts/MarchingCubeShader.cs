@@ -27,7 +27,7 @@ public class BufferContainer
 
 public class MarchingCubeShader : MonoBehaviour
 {
-    public int multiplyer = 2;
+    public int multiplyer;
     public bool ClearIfEnded = true;
     public ComputeShader compute;
     public MeshFilter meshFilter;
@@ -50,12 +50,12 @@ public class MarchingCubeShader : MonoBehaviour
 
         meshFilter = GetComponent<MeshFilter>();
 
-        bc.SetAll(multiplyer);
+        bc.SetAll(multiplyer); 
 
         meshFilter.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
     }
 
-    void Update()
+    void LateUpdate()
     {
         if (isChanged)
         {
@@ -105,14 +105,11 @@ public class MarchingCubeShader : MonoBehaviour
 
         compute.Dispatch(kernelHandle, MarchingCubeParameters.MatrixSize / 8, 
             MarchingCubeParameters.MatrixSize / 8, MarchingCubeParameters.MatrixSize / 8);
-
-       
-
     }
 
     private void SetMesh()
     {
-        ClearTriangles();
+        //ClearTriangles();
 
         meshFilter.mesh.MarkDynamic();
         meshFilter.mesh.Clear();
@@ -125,8 +122,5 @@ public class MarchingCubeShader : MonoBehaviour
         meshFilter.mesh.SetIndices(bc.triangles, MeshTopology.Triangles, 0);
 
         meshFilter.mesh.RecalculateNormals();
-        //meshFilter.mesh.RecalculateTangents();
-        //meshFilter.mesh.Optimize();
-
     }
 }

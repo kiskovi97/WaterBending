@@ -1,14 +1,16 @@
 ﻿using Assets.Scripts.GPUBased;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class TerrainCube : MonoBehaviour
 {
     public MarchingCubeShader shader;
-    public Texture2D texture;
     public float target = 0.5f;
     private float[] matrix;
+    public bool Moving = false;
     int size;
 
     // Start is called before the first frame update
@@ -18,23 +20,43 @@ public class TerrainCube : MonoBehaviour
         {
             shader = GetComponent<MarchingCubeShader>();
         }
-        size = MarchingCubeParameters.MatrixSize;
+        
+        size = shader.multiplyer * 8;
         matrix = new float[size * size * size];
+    }
+
+    public Vector3 realOffset = new Vector3();
+    private void Generate()
+    {
+        var offset = new Vector3();
         for (int i = 0; i < size; i++)
         {
             for (int j = 0; j < size; j++)
             {
                 for (int k = 0; k < size; k++)
                 {
-                    //matrix[GetIndex(i, j, k)] =  0.5f - j / (float) size;
-                    matrix[GetIndex(i, j, k)] = Noise(5f,1f,i / (float)size ,j / (float)size, k / (float)size);
-                    //matrix[GetIndex(i, j, k)] += Noise(2f,0.5f,i / (float)size ,j / (float)size, k / (float)size);
+                    offset.x = (i / (float)size);
+                    offset.y = (j / (float)size);
+                    offset.z = (k / (float)size);
+                    var noise = 0.2f - offset.y - transform.position.y;
+                    noise *= 0.7f;
+                    noise += PerlinNoise(1f, 1.8f, offset - realOffset + transform.position);
+                    noise -= PerlinNoise(4f, 0.2f, offset - realOffset + transform.position);
+                    noise += PerlinNoise(10f, 0.05f, offset - realOffset + transform.position);
+                    //noise -= PerlinNoise(5f, 0.2f, offset - realOffset + transform.position);
+                    //noise -= PerlinNoise(6f, 0.1f, offset - realOffset + transform.position);
+                    matrix[GetIndex(i, j, k)] = noise;
                 }
             }
         }
     }
 
-    private float Noise(float smooth, float max, float i, float j, float k)
+    private float PerlinNoise(float smooth, float max, Vector3 point)
+    {
+        return PerlinNoise(smooth, max, point.x, point.y, point.z);
+    }
+
+    private float PerlinNoise(float smooth, float max, float i, float j, float k)
     {
         float ab = Mathf.PerlinNoise(i * smooth, j * smooth);
         float bc = Mathf.PerlinNoise(j * smooth, k * smooth);
@@ -42,7 +64,7 @@ public class TerrainCube : MonoBehaviour
         float ba = Mathf.PerlinNoise(j * smooth, i * smooth);
         float cb = Mathf.PerlinNoise(k * smooth, j * smooth);
         float ca = Mathf.PerlinNoise(k * smooth, i * smooth);
-        return (ab + bc + ac + ba+ cb + ca) / 6f * max;
+        return (ab + bc + ac + ba + cb + ca) / 6f * max;
     }
 
     private int GetIndex(int i, int j, int k)
@@ -50,17 +72,17 @@ public class TerrainCube : MonoBehaviour
         return i + j * size + k * size * size;
     }
 
-    int offset = 0;
-
+    bool first = true;
     // Update is called once per frame
     void Update()
     {
-        if (offset > 10)
+        if (first || Moving)
         {
+            realOffset += Vector3.left * Time.deltaTime;
+            Generate();
             MarchingCubeParameters.Target = target;
             shader.SetInput(matrix);
-            offset = 0;
+            first = false;
         }
-        offset++;
     }
 }

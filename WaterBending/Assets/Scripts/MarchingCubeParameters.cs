@@ -8,9 +8,9 @@ namespace Assets.Scripts.GPUBased
 {
     class MarchingCubeParameters
     {
-        public static int MatrixMultiplyer = 2;
-        public static float Target = 0.5f;
-        public static int TrianglePerBox = 5; //5;
+        public static volatile int MatrixMultiplyer;
+        public static volatile float Target = 0.5f;
+        public static volatile int TrianglePerBox = 5; //5;
         public static int MatrixSize { get { return MatrixMultiplyer * 8; } }
         public static readonly float radius = 2f;
         public static int BufferSize { get { return MatrixSize * MatrixSize * MatrixSize; } }
