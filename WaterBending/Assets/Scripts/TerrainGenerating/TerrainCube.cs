@@ -4,10 +4,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TerrainCube : MonoBehaviour
 {
     public MarchingCubeShader shader;
+    public TerrainCubes cubes;
+    public float progress = 0.0f;
+    public Slider slider;
     public float target = 0.5f;
     private float[] matrix;
     public bool Moving = false;
@@ -26,7 +30,7 @@ public class TerrainCube : MonoBehaviour
     }
 
     public Vector3 realOffset = new Vector3();
-    private void Generate()
+    private IEnumerator Generate()
     {
         var offset = new Vector3();
         for (int i = 0; i < size; i++)
@@ -46,9 +50,16 @@ public class TerrainCube : MonoBehaviour
                     noise += PerlinNoise(2f, 0.3f, offset - realOffset + transform.position);
                     noise -= PerlinNoise(1.5f, 0.8f, offset - realOffset + transform.position);
                     matrix[GetIndex(i, j, k)] = noise;
+                    progress = i / (float)size + j / (float)(size * size) + k / (float)(size * size * size);
+                    slider.value = progress;
                 }
             }
+            yield return null;
         }
+        Destroy(slider.gameObject);
+        shader.parameters.Target = target;
+        shader.SetInput(matrix);
+        Debug.Log("Cube Done");
     }
 
     private float PerlinNoise(float smooth, float max, Vector3 point)
@@ -78,11 +89,14 @@ public class TerrainCube : MonoBehaviour
     {
         if (first || Moving)
         {
-            realOffset += Vector3.left * Time.deltaTime;
-            Generate();
-            shader.parameters.Target = target;
-            shader.SetInput(matrix);
             first = false;
+            realOffset += Vector3.left * Time.deltaTime;
+            StartCoroutine(Generate());
+        }
+        var position = cubes.player.position;
+        if ((position - transform.position).magnitude > cubes.radius * 1.1f)
+        {
+            cubes.RemoveMe(gameObject);
         }
     }
 }

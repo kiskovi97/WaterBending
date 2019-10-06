@@ -1,5 +1,5 @@
 ﻿using Assets.Scripts.GPUBased;
-using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,24 +7,73 @@ public class TerrainCubes : MonoBehaviour
 {
     public GameObject terrainCubes;
 
-    public int X = 2;
+    public Transform player;
+
+    public float radius;
+
+    public Dictionary<string, GameObject> cubes = new Dictionary<string, GameObject>();
+
     public int minY = -1;
-    public int Y = 1;
-    public int Z = 2;
+    public int maxY = 1;
+
+    private float offsetRandom;
+    private float offset;
 
     // Start is called before the first frame update
     void Start()
     {
-        var size = 16;
-        var offset = (size - 1f)/ size;
-        var offsetRandom = UnityEngine.Random.value * 100f;
-        for (int i=0; i<X; i++)
-            for (int j= minY; j<Y; j++)
-                for (int k=0; k<Z; k++)
+        var size = terrainCubes.GetComponent<MarchingCubeShader>().parameters.MatrixSize;
+        offset = (size - 1f) / size;
+        offsetRandom = Random.value * 100f;
+    }
+
+    private void Update()
+    {
+        GenerateFromPoint(player.position);
+    }
+
+    public void RemoveMe(GameObject obj)
+    {
+        var key = cubes.FirstOrDefault(x => x.Value == obj).Key;
+        if (!cubes.Remove(key))
+        {
+            Debug.Log("Problem");
+        }
+        Destroy(obj);
+    }
+
+    void GenerateFromPoint(Vector3 point)
+    {
+        var outOffset = point / offset;
+        int x = Mathf.RoundToInt(outOffset.x);
+        int z = Mathf.RoundToInt(outOffset.z);
+        for (var i = x - radius; i < x + radius; i++)
+            for (var j = minY; j <= maxY; j++)
+                for (var k = z - radius; k < z + radius; k++)
                 {
-                    var obj = Instantiate(terrainCubes, new Vector3(i * offset, j * offset, k * offset), new Quaternion());
-                    var cube = obj.GetComponent<TerrainCube>();
-                    cube.realOffset = Vector3.left * offsetRandom;
+                    var vector = new Vector3(i, j, k);
+                    if ((vector - outOffset).magnitude < radius)
+                    {
+                        CheckObject(vector);
+                    }
                 }
+    }
+
+    void CheckObject(Vector3 point)
+    {
+        var key = $"{point.x},{point.y},{point.z}";
+        if (!cubes.ContainsKey(key))
+        {
+            cubes.Add(key, GenerateObjects(point));
+        }
+    }
+
+    GameObject GenerateObjects(Vector3 point)
+    {
+        var obj = Instantiate(terrainCubes, point * offset, new Quaternion());
+        var cube = obj.GetComponent<TerrainCube>();
+        cube.realOffset = Vector3.left * offsetRandom;
+        cube.cubes = this;
+        return obj;
     }
 }

@@ -31,6 +31,14 @@ public class BufferContainer
 
         triangleConnectionTable.SetData(MarchingCubeParameters.TriangleConnectionTable);
     }
+
+    public void RelaseAll()
+    {
+        inputBuffer.Release();
+        triangleConnectionTable.Release();
+        vertexBuffer.Release();
+        triangleBuffer.Release();
+    }
 }
 
 public class MarchingCubeShader : MonoBehaviour
@@ -132,5 +140,10 @@ public class MarchingCubeShader : MonoBehaviour
         meshFilter.mesh.SetIndices(bc.triangles, MeshTopology.Triangles, 0);
 
         meshFilter.mesh.RecalculateNormals();
+    }
+
+    private void OnDestroy()
+    {
+        bc.RelaseAll();
     }
 }

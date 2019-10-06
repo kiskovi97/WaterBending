@@ -45,6 +45,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   terrainCubes: {fileID: 3945228365251152359, guid: 85acd5595ee935f4786af0d9be8c3ee1,
     type: 3}
-  X: 2
-  Y: 1
-  Z: 2
+  player: {fileID: 0}
+  radius: 5
+  minY: -1
+  maxY: 1
