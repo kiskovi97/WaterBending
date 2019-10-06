@@ -8,7 +8,7 @@ public class MarchingCube
 {
     private float[] matrix;
 
-    private MarchingCubeShader shader;
+    public MarchingCubeShader shader;
 
     private Transform transform;
 
@@ -84,9 +84,9 @@ public class MarchingCube
             {
                 var distance = (point - index).magnitude;
 
-                if (distance < MarchingCubeParameters.radius)
+                if (distance < shader.parameters.radius)
                 {
-                    matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / MarchingCubeParameters.radius));
+                    matrix[GetIndex((int)index.x, (int)index.y, (int)index.z)] += (1 - (distance / shader.parameters.radius));
                     pure = false;
                 }
             }
@@ -95,7 +95,7 @@ public class MarchingCube
 
     private Vector3[] GetCloseIndexes(Vector3 point)
     {
-        var radius = MarchingCubeParameters.radius;
+        var radius = shader.parameters.radius;
         int minX = Mathf.RoundToInt(point.x - radius);
         int minY = Mathf.RoundToInt(point.y - radius);
         int minZ = Mathf.RoundToInt(point.z - radius);

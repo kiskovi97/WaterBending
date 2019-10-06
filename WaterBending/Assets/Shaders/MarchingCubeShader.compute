@@ -57,7 +57,7 @@ void FillCube(int x, int y, int z, out float cube[8])
 }
 
 float3 convertToWorld(float3 p) {
-	float4 tmp = float4(p.x, p.y, p.z, 1);
+	float4 tmp = float4(p.x, p.y, p.z, 1) -fmod(float4(p.x, p.y, p.z, 1), float4(0.01, 0.2, 0.01, 0.01));
 	float4 converted = mul(ToWorld,tmp);
 	return float3(converted.x, converted.y, converted.z);
 }

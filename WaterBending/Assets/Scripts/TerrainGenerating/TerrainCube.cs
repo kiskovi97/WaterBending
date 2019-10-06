@@ -21,7 +21,7 @@ public class TerrainCube : MonoBehaviour
             shader = GetComponent<MarchingCubeShader>();
         }
         
-        size = shader.multiplyer * 8;
+        size = shader.parameters.MatrixMultiplyer * 8;
         matrix = new float[size * size * size];
     }
 
@@ -38,13 +38,13 @@ public class TerrainCube : MonoBehaviour
                     offset.x = (i / (float)size);
                     offset.y = (j / (float)size);
                     offset.z = (k / (float)size);
-                    var noise = 0.2f - offset.y - transform.position.y;
-                    noise *= 0.7f;
+                    var noise = 0.4f - offset.y - transform.position.y;
+                    noise *= 0.6f;
                     noise += PerlinNoise(1f, 1.8f, offset - realOffset + transform.position);
                     noise -= PerlinNoise(4f, 0.2f, offset - realOffset + transform.position);
                     noise += PerlinNoise(10f, 0.05f, offset - realOffset + transform.position);
-                    //noise -= PerlinNoise(5f, 0.2f, offset - realOffset + transform.position);
-                    //noise -= PerlinNoise(6f, 0.1f, offset - realOffset + transform.position);
+                    noise += PerlinNoise(2f, 0.3f, offset - realOffset + transform.position);
+                    noise -= PerlinNoise(1.5f, 0.8f, offset - realOffset + transform.position);
                     matrix[GetIndex(i, j, k)] = noise;
                 }
             }
@@ -80,7 +80,7 @@ public class TerrainCube : MonoBehaviour
         {
             realOffset += Vector3.left * Time.deltaTime;
             Generate();
-            MarchingCubeParameters.Target = target;
+            shader.parameters.Target = target;
             shader.SetInput(matrix);
             first = false;
         }

@@ -62,10 +62,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbbbd07e3fd269d4db3b6fa2308fd825, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  multiplyer: 4
   ClearIfEnded: 0
   compute: {fileID: 7200000, guid: 8f2c61c2fe35c7c46a7e197cfb885b7a, type: 3}
   meshFilter: {fileID: 0}
+  bc:
+    marchingCubeParameters:
+      MatrixMultiplyer: 3
 --- !u!33 &3945228365251152361
 MeshFilter:
   m_ObjectHideFlags: 0

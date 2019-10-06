@@ -1,24 +1,32 @@
 ﻿using Assets.Scripts.GPUBased;
 using UnityEngine;
 using System.Linq;
+using System;
 
+[Serializable]
 public class BufferContainer
 {
+    [NonSerialized]
     public ComputeBuffer inputBuffer;
+    [NonSerialized]
     public ComputeBuffer triangleConnectionTable;
+    [NonSerialized]
     public ComputeBuffer vertexBuffer;
+    [NonSerialized]
     public Vector3[] vertecies;
+    [NonSerialized]
     public ComputeBuffer triangleBuffer;
+    [NonSerialized]
     public int[] triangles;
+    public MarchingCubeParameters marchingCubeParameters = new MarchingCubeParameters();
 
-    public void SetAll(int multiplyer)
+    public void SetAll()
     {
-        MarchingCubeParameters.MatrixMultiplyer = multiplyer;
-        vertecies = new Vector3[MarchingCubeParameters.VertexCount];
-        triangles = new int[MarchingCubeParameters.VertexCount];
-        inputBuffer = new ComputeBuffer(MarchingCubeParameters.BufferSize, sizeof(float));
-        vertexBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount, sizeof(float) * 3);
-        triangleBuffer = new ComputeBuffer(MarchingCubeParameters.VertexCount, sizeof(int));
+        vertecies = new Vector3[marchingCubeParameters.VertexCount];
+        triangles = new int[marchingCubeParameters.VertexCount];
+        inputBuffer = new ComputeBuffer(marchingCubeParameters.BufferSize, sizeof(float));
+        vertexBuffer = new ComputeBuffer(marchingCubeParameters.VertexCount, sizeof(float) * 3);
+        triangleBuffer = new ComputeBuffer(marchingCubeParameters.VertexCount, sizeof(int));
         triangleConnectionTable = new ComputeBuffer(256 * 16, sizeof(int));
 
         triangleConnectionTable.SetData(MarchingCubeParameters.TriangleConnectionTable);
@@ -27,12 +35,14 @@ public class BufferContainer
 
 public class MarchingCubeShader : MonoBehaviour
 {
-    public int multiplyer;
     public bool ClearIfEnded = true;
     public ComputeShader compute;
     public MeshFilter meshFilter;
 
-    private BufferContainer bc = new BufferContainer();
+    public MarchingCubeParameters parameters { get { return bc.marchingCubeParameters; } }
+
+    [SerializeField]
+    public BufferContainer bc = new BufferContainer();
 
     bool isChanged = false;
 
@@ -45,12 +55,12 @@ public class MarchingCubeShader : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        if (MarchingCubeParameters.MatrixSize % 8 != 0)
+        if (bc.marchingCubeParameters.MatrixSize % 8 != 0)
             throw new System.ArgumentException("MatrixSize must be divisible be 8");
 
         meshFilter = GetComponent<MeshFilter>();
 
-        bc.SetAll(multiplyer); 
+        bc.SetAll(); 
 
         meshFilter.mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
     }
@@ -74,7 +84,7 @@ public class MarchingCubeShader : MonoBehaviour
 
     private void ClearTriangles()
     {
-        for (long i = 0; i < MarchingCubeParameters.VertexCount; i++)
+        for (long i = 0; i < bc.marchingCubeParameters.VertexCount; i++)
         {
             bc.vertecies[i] = new Vector3();
             bc.triangles[i] = -1;
@@ -90,21 +100,21 @@ public class MarchingCubeShader : MonoBehaviour
         compute.SetBuffer(kernelHandle, "triangleBuffer", bc.triangleBuffer);
         compute.SetBuffer(kernelHandle, "TriangleConnectionTable", bc.triangleConnectionTable);
 
-        compute.SetInt("matrixSize", MarchingCubeParameters.MatrixSize);
-        compute.SetInt("_Width", MarchingCubeParameters.MatrixSize);
-        compute.SetInt("_Height", MarchingCubeParameters.MatrixSize);
-        compute.SetFloat("Target", MarchingCubeParameters.Target);
-        compute.SetInt("vertexBufferSize", MarchingCubeParameters.TrianglePerBox * 3);
+        compute.SetInt("matrixSize", bc.marchingCubeParameters.MatrixSize);
+        compute.SetInt("_Width", bc.marchingCubeParameters.MatrixSize);
+        compute.SetInt("_Height", bc.marchingCubeParameters.MatrixSize);
+        compute.SetFloat("Target", bc.marchingCubeParameters.Target);
+        compute.SetInt("vertexBufferSize", bc.marchingCubeParameters.TrianglePerBox * 3);
 
 
-        var Map = Matrix4x4.Translate(Vector3.one * MarchingCubeParameters.MatrixSize / -2);
-        var scale = 1f / MarchingCubeParameters.MatrixSize;
+        var Map = Matrix4x4.Translate(Vector3.one * bc.marchingCubeParameters.MatrixSize / -2);
+        var scale = 1f / bc.marchingCubeParameters.MatrixSize;
         var Scale = new Matrix4x4(new Vector4(scale, 0, 0, 0), new Vector4(0, scale, 0, 0), new Vector4(0, 0, scale, 0), new Vector4(0, 0, 0, 1));
 
         compute.SetMatrix("ToWorld",  Scale * Map);
 
-        compute.Dispatch(kernelHandle, MarchingCubeParameters.MatrixSize / 8, 
-            MarchingCubeParameters.MatrixSize / 8, MarchingCubeParameters.MatrixSize / 8);
+        compute.Dispatch(kernelHandle, bc.marchingCubeParameters.MatrixSize / 8,
+            bc.marchingCubeParameters.MatrixSize / 8, bc.marchingCubeParameters.MatrixSize / 8);
     }
 
     private void SetMesh()

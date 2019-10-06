@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 2379066109062526317}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 50, y: 50, z: 50}
+  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
   m_Children:
   - {fileID: 7241384455078874973}
   m_Father: {fileID: 0}
@@ -92,8 +92,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbbbd07e3fd269d4db3b6fa2308fd825, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  multiplyer: 3
+  ClearIfEnded: 1
   compute: {fileID: 7200000, guid: 8f2c61c2fe35c7c46a7e197cfb885b7a, type: 3}
   meshFilter: {fileID: 0}
+  bc:
+    marchingCubeParameters:
+      MatrixMultiplyer: 2
 --- !u!1001 &2379066107565352007
 PrefabInstance:
   m_ObjectHideFlags: 0

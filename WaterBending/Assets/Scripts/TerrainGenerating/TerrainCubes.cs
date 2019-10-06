@@ -8,6 +8,7 @@ public class TerrainCubes : MonoBehaviour
     public GameObject terrainCubes;
 
     public int X = 2;
+    public int minY = -1;
     public int Y = 1;
     public int Z = 2;
 
@@ -16,9 +17,9 @@ public class TerrainCubes : MonoBehaviour
     {
         var size = 16;
         var offset = (size - 1f)/ size;
-        var offsetRandom = UnityEngine.Random.value * 10f;
+        var offsetRandom = UnityEngine.Random.value * 100f;
         for (int i=0; i<X; i++)
-            for (int j= 0; j<Y; j++)
+            for (int j= minY; j<Y; j++)
                 for (int k=0; k<Z; k++)
                 {
                     var obj = Instantiate(terrainCubes, new Vector3(i * offset, j * offset, k * offset), new Quaternion());

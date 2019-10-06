@@ -6,16 +6,19 @@ using System.Threading.Tasks;
 
 namespace Assets.Scripts.GPUBased
 {
-    class MarchingCubeParameters
+    [Serializable]
+    public class MarchingCubeParameters
     {
-        public static volatile int MatrixMultiplyer;
-        public static volatile float Target = 0.5f;
-        public static volatile int TrianglePerBox = 5; //5;
-        public static int MatrixSize { get { return MatrixMultiplyer * 8; } }
-        public static readonly float radius = 2f;
-        public static int BufferSize { get { return MatrixSize * MatrixSize * MatrixSize; } }
-        public static int TriangleCount { get { return BufferSize * TrianglePerBox; } }
-        public static int VertexCount { get { return TriangleCount * 3; } }
+        public volatile int MatrixMultiplyer = 3;
+        [NonSerialized]
+        public volatile float Target = 0.5f;
+        [NonSerialized]
+        public volatile int TrianglePerBox = 5; //5;
+        public int MatrixSize { get { return MatrixMultiplyer * 8; } }
+        public readonly float radius = 2f;
+        public int BufferSize { get { return MatrixSize * MatrixSize * MatrixSize; } }
+        public int TriangleCount { get { return BufferSize * TrianglePerBox; } }
+        public int VertexCount { get { return TriangleCount * 3; } }
 
         public readonly static int[,] TriangleConnectionTable = new int[,]
         {

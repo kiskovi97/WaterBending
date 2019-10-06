@@ -9,7 +9,7 @@ namespace Assets.Scripts.GPUBased
     {
         public IEnumerable<MarchingCube> Cubes { get
             {
-                return internalCubes.Take(7);
+                return internalCubes;
             }
         }
         private MarchingCube[] internalCubes { get; set; }
@@ -242,7 +242,8 @@ namespace Assets.Scripts.GPUBased
 
         private void Start()
         {
-            size = MarchingCubeParameters.MatrixSize;
+            var parameters = marchingCubesObject.GetComponent<MarchingCubeShader>().parameters;
+            size = parameters.MatrixSize;
             correction = (size - 1f) / (size);
 
             if (particles == null || particles.Length < particleSystem.main.maxParticles)
