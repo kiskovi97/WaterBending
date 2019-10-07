@@ -13,6 +13,8 @@ public class TerrainCubes : MonoBehaviour
 
     public Dictionary<string, GameObject> cubes = new Dictionary<string, GameObject>();
 
+    public Queue<GameObject> leftOver = new Queue<GameObject>();
+
     public int minY = -1;
     public int maxY = 1;
 
@@ -23,7 +25,7 @@ public class TerrainCubes : MonoBehaviour
     void Start()
     {
         var size = terrainCubes.GetComponent<MarchingCubeShader>().parameters.MatrixSize;
-        offset = (size - 1f) / size;
+        offset = (size - 1f) / size * 0.95f;
         offsetRandom = Random.value * 100f;
     }
 
@@ -39,7 +41,8 @@ public class TerrainCubes : MonoBehaviour
         {
             Debug.Log("Problem");
         }
-        Destroy(obj);
+        leftOver.Enqueue(obj);
+        obj.SetActive(false);
     }
 
     void GenerateFromPoint(Vector3 point)
@@ -70,10 +73,21 @@ public class TerrainCubes : MonoBehaviour
 
     GameObject GenerateObjects(Vector3 point)
     {
-        var obj = Instantiate(terrainCubes, point * offset, new Quaternion());
+        GameObject obj;
+        if (leftOver.Count > 0)
+        {
+            obj = leftOver.Dequeue();
+            obj.transform.position = point * offset;
+            obj.SetActive(true);
+        } else
+        {
+            obj = Instantiate(terrainCubes, point * offset, new Quaternion());
+        }
+        
         var cube = obj.GetComponent<TerrainCube>();
         cube.realOffset = Vector3.left * offsetRandom;
         cube.cubes = this;
+        cube.Start();
         return obj;
     }
 }

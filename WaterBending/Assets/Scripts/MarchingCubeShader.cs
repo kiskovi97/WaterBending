@@ -140,7 +140,18 @@ public class MarchingCubeShader : MonoBehaviour
         meshFilter.mesh.SetIndices(bc.triangles, MeshTopology.Triangles, 0);
 
         meshFilter.mesh.RecalculateNormals();
+
+        if (!meshFilter.mesh.triangles.Where((item) => item > 0).Any())
+        {
+            empty = true;
+            meshFilter.mesh.Clear();
+        } else
+        {
+            empty = false;
+        }
     }
+
+    public bool empty = false;
 
     private void OnDestroy()
     {

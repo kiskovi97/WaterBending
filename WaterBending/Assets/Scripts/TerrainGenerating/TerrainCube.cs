@@ -18,15 +18,23 @@ public class TerrainCube : MonoBehaviour
     int size;
 
     // Start is called before the first frame update
-    void Start()
+    public void Start()
     {
+        first = true;
         if (shader == null)
         {
             shader = GetComponent<MarchingCubeShader>();
         }
-        
+        slider.gameObject.SetActive(true);
         size = shader.parameters.MatrixMultiplyer * 8;
         matrix = new float[size * size * size];
+        if (shader.meshFilter != null)
+        {
+            if (shader.meshFilter.mesh != null)
+            {
+                shader.meshFilter.mesh.Clear();
+            }
+        }
     }
 
     public Vector3 realOffset = new Vector3();
@@ -56,7 +64,7 @@ public class TerrainCube : MonoBehaviour
             }
             yield return null;
         }
-        Destroy(slider.gameObject);
+        slider.gameObject.SetActive(false);
         shader.parameters.Target = target;
         shader.SetInput(matrix);
         Debug.Log("Cube Done");
@@ -97,6 +105,10 @@ public class TerrainCube : MonoBehaviour
         if ((position - transform.position).magnitude > cubes.radius * 1.1f)
         {
             cubes.RemoveMe(gameObject);
+        }
+        if (shader.empty)
+        {
+            //cubes.RemoveMe(gameObject);
         }
     }
 }
