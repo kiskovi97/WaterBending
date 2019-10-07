@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
+
 public class TerrainCube : MonoBehaviour
 {
     public MarchingCubeShader shader;
@@ -15,6 +16,14 @@ public class TerrainCube : MonoBehaviour
     public float target = 0.5f;
     private float[] matrix;
     public bool Moving = false;
+
+    public float ground = 0.4f;
+    public float groundFactor = 0.6f;
+    public Vector2[] perlings = new Vector2[5]
+    {
+        new Vector2( 1f, 1.8f ),new Vector2( 4f, -0.2f ),new Vector2( 10f, 0.05f ),new Vector2( 2f, 0.3f ),new Vector2( 1.5f, -0.8f )
+    };
+
     int size;
 
     // Start is called before the first frame update
@@ -50,13 +59,19 @@ public class TerrainCube : MonoBehaviour
                     offset.x = (i / (float)size);
                     offset.y = (j / (float)size);
                     offset.z = (k / (float)size);
-                    var noise = 0.4f - offset.y - transform.position.y;
-                    noise *= 0.6f;
-                    noise += PerlinNoise(1f, 1.8f, offset - realOffset + transform.position);
-                    noise -= PerlinNoise(4f, 0.2f, offset - realOffset + transform.position);
+                    var noise = ground - offset.y - transform.position.y;
+                    noise *= groundFactor;
+
+                    for (int x=0; x < perlings.Length;x++)
+                    {
+                        noise += PerlinNoise(perlings[x].x, perlings[x].y, offset - realOffset + transform.position);
+                    }
+
+                    /*noise += PerlinNoise(1f, 1.8f, offset - realOffset + transform.position);
+                    noise += PerlinNoise(4f, -0.2f, offset - realOffset + transform.position);
                     noise += PerlinNoise(10f, 0.05f, offset - realOffset + transform.position);
                     noise += PerlinNoise(2f, 0.3f, offset - realOffset + transform.position);
-                    noise -= PerlinNoise(1.5f, 0.8f, offset - realOffset + transform.position);
+                    noise += PerlinNoise(1.5f, -0.8f, offset - realOffset + transform.position);*/
                     matrix[GetIndex(i, j, k)] = noise;
                     progress = i / (float)size + j / (float)(size * size) + k / (float)(size * size * size);
                     slider.value = progress;
